@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackBerry Assistant Pro</title>
+    <style>
+        * { box-sizing: border-box; }
+        
+        body {
+            /* BlackBerry 10 style dark geometric background gradient */
+            background: radial-gradient(circle at center, #111b24 0%, #000000 100%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+            margin: 0;
+            padding: 15px;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- SCREEN 1: THE HOME GRID MAIN VIEW --- */
+        #grid-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 4px;
+            width: 100%;
+            height: 240px;
+            margin-top: 10px;
+        }
+
+        .tile {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: transform 0.1s;
+        }
+        .tile:active { transform: scale(0.98); }
+        .tile svg { width: 35px; height: 35px; fill: white; }
+        
+        .tile-alarm { background-color: #618A3D; grid-row: span 2; align-items: center; justify-content: center; }
+        .tile-alarm svg { width: 80px; height: 80px; }
+        .tile-location { background-color: #618A3D; }
+        .tile-search { background-color: #0082C8; }
+        .tile-sports { background-color: #A62B2B; }
+        .tile-tickets { background-color: #A62B2B; }
+
+        .input-container {
+            width: 100%;
+            margin-top: 25px;
+            border-bottom: 1px solid #555555;
+            padding-bottom: 5px;
+        }
+        #text-output {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 22px;
+            font-style: italic;
+            outline: none;
+            text-align: center;
+        }
+
+        .mic-container {
+            margin-top: auto;
+            margin-bottom: 40px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mic-circle {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 3px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .mic-circle svg { width: 40px; height: 40px; fill: #ffffff; }
+
+        /* --- SCREEN 2: THE DETAILED RESULT SCREEN (YOUR IMAGE) --- */
+        #result-screen {
+            display: none; /* Initially hidden */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            position: relative;
+        }
+
+        .sub-header {
+            font-size: 15px;
+            color: #888888;
+            font-style: italic;
+            margin-bottom: 5px;
+        }
+
+        .request-text {
+            font-size: 26px;
+            color: #ffffff;
+            font-weight: 300;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        /* Large circular action icons matching the screenshot style */
+        .action-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .action-circle svg {
+            width: 75px;
+            height: 75px;
+            fill: #ffffff;
+        }
+
+        /* Back navigation arrow button at the bottom left */
+        .back-button {
+            position: absolute;
+            bottom: 20px;
+            left: 10px;
+            width: 60px;
+            height: 60px;
+            background-color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .back-button:active { background-color: #333333; }
+        .back-button svg { width: 25px; height: 25px; fill: white; }
+    </style>
+</head>
+<body>
+
+    <!-- SCREEN 1: HOME MAIN INTERFACE -->
+    <div id="grid-screen">
+        <div class="grid-container">
+            <div class="tile tile-alarm" onclick="showTargetResult('Set an alarm', '#618A3D', 'alarm')">
+                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5M7.88,3.34L9.3,4.76L5.05,9L3.64,7.59L7.88,3.34M16.12,3.34L20.36,7.59L18.95,9L14.7,4.76L16.12,3.34Z"/></svg>
+                <div class="tile-label" id="live-time">00:00</div>
+            </div>
+            <div class="tile tile-location" onclick="showTargetResult('Find a restaurant nearby', '#A62B2B', 'restaurant')">
+                <svg viewBox="0 0 24 24"><path d="M11 9H13V6H11M11 11V14H13V11M6 11V13H9V11M15 11V13H18V11M12 2A10 10 0 0 0 2 12A10 10 0 0 0 12 22A10 10 0 0 0 22 12A10 10 0 0 0 12 2Z"/></svg>
+                <div class="tile-label">Find a restaurant</div>
+            </div>
+            <div class="tile tile-search" onclick="showTargetResult('Search the Internet', '#0082C8', 'search')">
+                <svg viewBox="0 0 24 24"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/></svg>
+                <div class="tile-label">Search Internet</div>
+            </div>
+            <div class="tile tile-sports" onclick="showTargetResult('Check sports schedules', '#A62B2B', 'sports')">
+                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4C13.43,4 14.8,4.45 15.96,5.22L14.54,6.64C13.77,6.23 12.9,6 12,6A6,6 0 0,0 6,12C6,12.9 6.23,13.77 6.64,14.54L5.22,15.96C4.45,14.8 4,13.43 4,12A8,8 0 0,1 12,4M18.78,8.04C19.55,9.2 20,10.57 20,12A8,8 0 0,1 12,20C10.57,20 9.2,19.55 8.04,18.78L9.46,17.36C10.23,17.77 11.1,18 12,18A6,6 0 0,0 18,12C18,11.1 17.77,10.23 17.36,9.46L18.78,8.04Z"/></svg>
+                <div class="tile-label">Check sports</div>
+            </div>
+            <div class="tile tile-tickets" onclick="showTargetResult('Check current tickets', '#A62B2B', 'tickets')">
+                <svg viewBox="0 0 24 24"><path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3H18V1M17,11H12V16H17V11Z"/></svg>
+                <div class="tile-label">Check tickets</div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="text-output" value="Type here to get started" readonly>
+        </div>
+
+        <div class="mic-container">
+            <div class="mic-circle" onclick="startVoiceAPI()">
+                <svg viewBox="0 0 24 24"><path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: DETAILED ACTION VIEW (MATCHES SCREENSHOT) -->
+    <div id="result-screen">
+        <div class="sub-header">Tap your request to edit it</div>
+        <div class="request-text" id="target-text">Find a restaurant nearby</div>
+        
+        <!-- Large Colored Interactive Icon -->
+        <div class="action-circle" id="target-circle">
+            <!-- Dynamic SVGs render here via Javascript -->
+            <div id="icon-graphic"></div>
+        </div>
+
+        <!-- Back arrow box from image -->
+        <div class="back-button" onclick="showHomeGrid()">
+            <svg viewBox="0 0 24 24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"/></svg>
+        </div>
+    </div>
+
+    <script>
+        const gridScreen = document.getElementById('grid-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const targetText = document.getElementById('target-text');
+        const targetCircle = document.getElementById('target-circle');
+        const iconGraphic = document.getElementById('icon-graphic');
+        const textOutput = document.getElementById('text-output');
+
+        // Dynamic System Clock
+        function updateClock() {
+            document.getElementById('live-time').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Vector graphics dictionary mimicking the original BlackBerry icon set
+        const vectors = {
+            restaurant: `<svg viewBox="0 0 24 24"><path d="M11 9H9V2H7V9H5V2H3V9C3 11.12 4.66 12.84 6.75 12.97V22H9.25V12.97C11.34 12.84 13 11.12 13 9V2H11V9M16 6V14H18.5V22H21V2C18.24 2 16 4.24 16 6Z"/></svg>`,
