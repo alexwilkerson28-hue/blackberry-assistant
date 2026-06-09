@@ -6,761 +6,884 @@
   <title>BlackBerry Assistant Pro</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width:100%; height:100%; background:#000; font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; color:#fff; overflow:hidden; }
 
-    html, body {
-      width: 100%; height: 100%;
-      background: #000;
-      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-      color: #fff;
-      overflow: hidden;
-    }
+    /* ═══════════════ SCREENS ═══════════════ */
+    .screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity .3s; }
+    .screen.hidden { opacity:0; pointer-events:none; }
 
-    /* ═══════════════════════════════════
-       SCREEN SYSTEM — only one visible
-    ═══════════════════════════════════ */
-    .screen {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.3s ease;
-    }
-    .screen.hidden { opacity: 0; pointer-events: none; }
-
-    /* ═══════════════════════════════════
-       GRID SCREEN
-    ═══════════════════════════════════ */
-    #grid-screen {
-      background: radial-gradient(ellipse at 50% 40%, #0d0d18 0%, #000 70%);
-    }
+    /* ═══════════════ GRID SCREEN ═══════════════ */
+    #grid-screen { background:radial-gradient(ellipse at 50% 38%, #0d0d1c 0%, #000 72%); }
 
     .tile-grid {
-      display: grid;
-      /* Match original: wide clock tile + two narrow columns */
-      grid-template-columns: 200px 160px 160px;
-      grid-template-rows: 130px 130px;
-      gap: 3px;
+      display:grid;
+      grid-template-columns:200px 160px 160px;
+      grid-template-rows:130px 130px;
+      gap:3px;
     }
-
     .tile {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 12px 14px;
-      cursor: pointer;
-      text-decoration: none;
-      color: #fff;
-      position: relative;
-      overflow: hidden;
-      transition: filter 0.12s, transform 0.1s;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
+      display:flex; flex-direction:column; justify-content:flex-end;
+      padding:12px 14px; cursor:pointer; color:#fff; position:relative;
+      overflow:hidden; transition:filter .12s, transform .1s;
+      -webkit-tap-highlight-color:transparent; user-select:none;
     }
-    .tile:hover  { filter: brightness(1.18); }
-    .tile:active { transform: scale(0.97); filter: brightness(1.3); }
+    .tile:hover  { filter:brightness(1.18); }
+    .tile:active { transform:scale(.97); filter:brightness(1.3); }
 
-    /* Exact colours from screenshot */
-    .t-clock      { background: #6a8c3f; grid-row: span 2; align-items: center; justify-content: center; }
-    .t-restaurant { background: #738f3e; }
-    .t-search     { background: #1877c8; }
-    .t-sports     { background: #8c2222; }
-    .t-tickets    { background: #952626; }
+    .t-clock      { grid-row:span 2; align-items:center; justify-content:center; }
+    .t-restaurant { }
+    .t-search     { }
+    .t-sports     { }
+    .t-tickets    { }
 
-    /* ── Clock tile ── */
-    .clock-inner {
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-      pointer-events: none;
+    /* tile colour vars — overridden by settings */
+    :root {
+      --c-clock:      #6a8c3f;
+      --c-restaurant: #738f3e;
+      --c-search:     #1877c8;
+      --c-sports:     #8c2222;
+      --c-tickets:    #952626;
+      --assistant-name: "BlackBerry Assistant";
     }
-    .clock-svg { width: 64px; height: 64px; }
-    .clock-digital {
-      font-size: 14px; font-weight: 300; letter-spacing: 2px;
-      color: rgba(255,255,255,0.9);
-    }
-    .clock-dow {
-      font-size: 11px; font-weight: 400; letter-spacing: 1px;
-      text-transform: uppercase; color: rgba(255,255,255,0.65);
-      margin-top: -4px;
-    }
+    .t-clock      { background: var(--c-clock); }
+    .t-restaurant { background: var(--c-restaurant); }
+    .t-search     { background: var(--c-search); }
+    .t-sports     { background: var(--c-sports); }
+    .t-tickets    { background: var(--c-tickets); }
 
-    /* ── Small tile icons & labels ── */
-    .tile-top {
-      position: absolute; top: 12px; left: 14px;
-    }
-    .tile-icon-svg { width: 28px; height: 28px; }
-    .tile-dot {
-      width: 18px; height: 18px; border-radius: 50%;
-      background: rgba(255,255,255,0.85);
-    }
-    .tile-label {
-      font-size: 13px; font-weight: 400; line-height: 1.25;
-      color: #fff;
-    }
+    /* clock */
+    .clock-inner { display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
+    .clock-digital { font-size:14px; font-weight:300; letter-spacing:2px; color:rgba(255,255,255,.9); }
+    .clock-dow     { font-size:11px; font-weight:400; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,.65); margin-top:-4px; }
 
-    /* Sports tile — daily label */
-    .sport-day   { font-size: 9px; opacity: .6; text-transform: uppercase; letter-spacing: .5px; }
-    .sport-name  { font-size: 13px; font-weight: 600; line-height: 1.2; }
-    .sport-league{ font-size: 10px; opacity: .65; }
+    /* small tile */
+    .tile-top  { position:absolute; top:12px; left:14px; }
+    .tile-dot  { width:18px; height:18px; border-radius:50%; background:rgba(255,255,255,.85); }
+    .tile-label{ font-size:13px; font-weight:400; line-height:1.25; }
+    .sport-day   { font-size:9px; opacity:.6; text-transform:uppercase; letter-spacing:.5px; }
+    .sport-name  { font-size:13px; font-weight:600; line-height:1.2; }
+    .sport-league{ font-size:10px; opacity:.65; }
 
-    /* ── Search bar ── */
+    /* search bar */
     .search-row {
-      margin-top: 22px;
-      width: 523px; /* matches tile grid width */
-      border-bottom: 1px solid rgba(255,255,255,0.2);
-      padding-bottom: 6px;
-      display: flex; align-items: center; gap: 0;
-      position: relative;
+      margin-top:22px; width:523px;
+      border-bottom:1px solid rgba(255,255,255,.2);
+      padding-bottom:6px; display:flex; align-items:center; position:relative;
     }
     .search-row input {
-      flex: 1; background: transparent; border: none; outline: none;
-      font-family: inherit; font-size: 16px; font-style: italic;
-      font-weight: 300; color: rgba(255,255,255,.55);
-      caret-color: #1877c8;
+      flex:1; background:transparent; border:none; outline:none;
+      font-family:inherit; font-size:16px; font-style:italic; font-weight:300;
+      color:rgba(255,255,255,.55); caret-color:#1877c8;
     }
-    .search-row input::placeholder { color: rgba(255,255,255,.0); }
-    .search-row input:focus { color: rgba(255,255,255,.85); font-style: normal; }
-    /* "Type here to get started" fake placeholder matching original exactly */
-    .search-placeholder {
-      position: absolute; left: 0; top: 0; bottom: 0;
-      display: flex; align-items: center;
-      pointer-events: none;
-      font-size: 16px; font-style: italic; font-weight: 300;
-      color: rgba(255,255,255,.55);
-      white-space: nowrap;
+    .search-row input::placeholder { color:transparent; }
+    .search-row input:focus { color:rgba(255,255,255,.85); font-style:normal; }
+    .search-ph {
+      position:absolute; left:0; top:0; bottom:0; display:flex; align-items:center;
+      pointer-events:none; font-size:16px; font-style:italic; font-weight:300;
+      color:rgba(255,255,255,.55); white-space:nowrap;
     }
-    .search-placeholder span {
-      background: #1877c8;
-      color: #fff;
-      padding: 1px 3px;
-      font-style: italic;
-    }
-    .search-go {
-      background: none; border: none; color: rgba(255,255,255,.4);
-      cursor: pointer; font-size: 18px; padding: 0 4px;
-      transition: color .15s;
-    }
-    .search-go:hover { color: #fff; }
+    .search-ph span { background:#1877c8; color:#fff; padding:1px 3px; font-style:italic; }
+    .search-go { background:none; border:none; color:rgba(255,255,255,.4); cursor:pointer; font-size:18px; padding:0 4px; transition:color .15s; }
+    .search-go:hover { color:#fff; }
 
-    /* ── Mic button ── matches original circle exactly ── */
-    .mic-wrap {
-      margin-top: 60px;
-    }
+    /* mic button */
+    .mic-wrap { margin-top:60px; }
     .mic-btn {
-      width: 72px; height: 72px; border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.7);
-      background: transparent;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: border-color .2s, background .2s, transform .1s;
+      width:72px; height:72px; border-radius:50%;
+      border:2px solid rgba(255,255,255,.7); background:transparent;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:border-color .2s, background .2s, transform .1s;
     }
-    .mic-btn:hover  { border-color: #fff; background: rgba(255,255,255,.06); }
-    .mic-btn:active { transform: scale(.95); }
-    .mic-icon-svg { width: 26px; height: 26px; fill: rgba(255,255,255,0.85); }
+    .mic-btn:hover  { border-color:#fff; background:rgba(255,255,255,.06); }
+    .mic-btn:active { transform:scale(.95); }
+    .mic-icon-svg { width:26px; height:26px; fill:rgba(255,255,255,.85); }
 
-    /* ═══════════════════════════════════
-       RESULT SCREEN  (tile click)
-    ═══════════════════════════════════ */
-    #result-screen {
-      background: radial-gradient(ellipse at 50% 40%, #0d0d18 0%, #000 70%);
-      flex-direction: column;
-      gap: 0;
+    /* settings gear button */
+    .settings-btn {
+      position:absolute; top:18px; right:22px;
+      background:none; border:none; cursor:pointer;
+      color:rgba(255,255,255,.45); font-size:22px;
+      transition:color .2s, transform .3s;
     }
+    .settings-btn:hover { color:#fff; transform:rotate(45deg); }
 
-    .result-header {
-      display: flex; align-items: center; gap: 16px;
-      width: 100%; max-width: 600px;
-      padding: 0 32px 32px;
-    }
-    .result-icon-circle {
-      width: 56px; height: 56px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .result-title { font-size: 20px; font-weight: 300; color: rgba(255,255,255,.9); }
+    /* ═══════════════ RESULT SCREEN ═══════════════ */
+    #result-screen { background:radial-gradient(ellipse at 50% 38%, #0d0d1c 0%, #000 72%); justify-content:flex-start; padding-top:60px; }
 
-    .result-body {
-      width: 100%; max-width: 600px;
-      padding: 0 32px;
-      font-size: 14px; color: rgba(255,255,255,.6);
-      line-height: 1.7;
-    }
+    .result-header { display:flex; align-items:center; gap:16px; width:90%; max-width:600px; margin-bottom:24px; }
+    .result-icon-circle { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .result-title { font-size:22px; font-weight:300; color:rgba(255,255,255,.9); }
 
-    .result-input-row {
-      margin-top: 24px;
-      width: 100%; max-width: 600px;
-      padding: 0 32px;
-      border-bottom: 1px solid rgba(255,255,255,.2);
-      padding-bottom: 6px;
-      font-size: 14px; color: rgba(255,255,255,.45);
-      font-style: italic;
+    .result-content {
+      width:90%; max-width:600px;
+      min-height:200px;
+      background:rgba(255,255,255,.04);
+      border:0.5px solid rgba(255,255,255,.1);
+      border-radius:6px;
+      padding:20px 22px;
+      font-size:14px; color:rgba(255,255,255,.75); line-height:1.8;
+      overflow-y:auto; max-height:55vh;
     }
+    .result-content .loading { opacity:.5; font-style:italic; animation:blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:.5} 50%{opacity:.15} }
 
-    .result-open-btn {
-      margin-top: 32px;
-      padding: 10px 28px;
-      background: transparent;
-      border: 1px solid rgba(255,255,255,.35);
-      color: rgba(255,255,255,.8);
-      font-size: 14px; font-family: inherit;
-      cursor: pointer; letter-spacing: .5px;
-      transition: background .2s, border-color .2s;
+    .result-content .rc-item {
+      display:flex; align-items:flex-start; gap:10px;
+      padding:10px 0; border-bottom:0.5px solid rgba(255,255,255,.08);
     }
-    .result-open-btn:hover { background: rgba(255,255,255,.08); border-color: #fff; }
+    .result-content .rc-item:last-child { border-bottom:none; }
+    .rc-num  { width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; margin-top:2px; }
+    .rc-text { flex:1; }
+    .rc-name { font-size:14px; font-weight:500; color:#fff; }
+    .rc-sub  { font-size:12px; color:rgba(255,255,255,.5); margin-top:2px; }
 
     .back-btn {
-      position: absolute; bottom: 28px; left: 28px;
-      width: 44px; height: 44px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.2);
-      color: rgba(255,255,255,.7);
-      font-size: 20px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: background .15s;
+      position:absolute; bottom:28px; left:28px;
+      width:44px; height:44px; background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.7);
+      font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:background .15s;
     }
-    .back-btn:hover { background: rgba(255,255,255,.14); }
+    .back-btn:hover { background:rgba(255,255,255,.14); }
 
-    /* ═══════════════════════════════════
-       MIC OVERLAY  — BlackBerry style
-    ═══════════════════════════════════ */
-    #mic-screen {
-      background: #07080f;
-      z-index: 100;
-    }
+    /* ═══════════════ MIC OVERLAY ═══════════════ */
+    #mic-screen { background:#07080f; z-index:100; }
+    .geo { position:absolute; inset:0; overflow:hidden; }
+    .geo::before { content:''; position:absolute; width:0; height:0; border-left:120vw solid transparent; border-top:75vh solid #0c1526; top:0; left:-10vw; }
+    .geo::after  { content:''; position:absolute; width:0; height:0; border-right:55vw solid transparent; border-top:60vh solid #16092a; top:0; right:0; opacity:.75; }
+    .geo .ga { position:absolute; width:0; height:0; border-left:100vw solid transparent; border-bottom:55vh solid #080e1e; bottom:0; left:0; }
+    .geo .gb { position:absolute; width:0; height:0; border-left:60vw solid transparent; border-right:60vw solid transparent; border-bottom:50vh solid #0d1a2e; top:8vh; left:-20vw; opacity:.5; }
+    .geo .gc { position:absolute; width:0; height:0; border-right:45vw solid transparent; border-bottom:70vh solid #110820; bottom:0; right:0; opacity:.6; }
 
-    /* Geometric faceted background */
-    .geo { position: absolute; inset: 0; overflow: hidden; }
-    .geo::before {
-      content: '';
-      position: absolute;
-      width: 0; height: 0;
-      border-left: 120vw solid transparent;
-      border-top: 75vh solid #0c1526;
-      top: 0; left: -10vw;
-    }
-    .geo::after {
-      content: '';
-      position: absolute;
-      width: 0; height: 0;
-      border-right: 55vw solid transparent;
-      border-top: 60vh solid #16092a;
-      top: 0; right: 0;
-      opacity: .75;
-    }
-    .geo .ga {
-      position: absolute;
-      width: 0; height: 0;
-      border-left: 100vw solid transparent;
-      border-bottom: 55vh solid #080e1e;
-      bottom: 0; left: 0;
-    }
-    .geo .gb {
-      position: absolute;
-      width: 0; height: 0;
-      border-left: 60vw solid transparent;
-      border-right: 60vw solid transparent;
-      border-bottom: 50vh solid #0d1a2e;
-      top: 8vh; left: -20vw;
-      opacity: .5;
-    }
-    .geo .gc {
-      position: absolute;
-      width: 0; height: 0;
-      border-right: 45vw solid transparent;
-      border-bottom: 70vh solid #110820;
-      bottom: 0; right: 0;
-      opacity: .6;
-    }
+    .mic-orb { position:relative; z-index:2; width:130px; height:130px; border-radius:50%; background:#1daae0; display:flex; align-items:center; justify-content:center; animation:orbPulse 1.5s ease-in-out infinite; }
+    @keyframes orbPulse { 0%,100%{box-shadow:0 0 0 0 rgba(29,170,224,.5)} 50%{box-shadow:0 0 0 24px rgba(29,170,224,0)} }
+    .orb-wave { width:76px; height:30px; }
+    .wave-line { fill:none; stroke:#fff; stroke-width:2.8; stroke-linecap:round; }
+    .mic-status { position:relative; z-index:2; margin-top:28px; font-size:14px; font-weight:300; letter-spacing:2.5px; text-transform:uppercase; color:rgba(255,255,255,.6); }
+    .mic-words  { position:relative; z-index:2; margin-top:14px; font-size:18px; font-weight:300; color:#fff; min-height:28px; max-width:80vw; text-align:center; }
+    .mic-close-hint { position:absolute; bottom:36px; z-index:3; font-size:12px; color:rgba(255,255,255,.3); letter-spacing:1.5px; cursor:pointer; text-transform:uppercase; transition:color .2s; }
+    .mic-close-hint:hover { color:rgba(255,255,255,.65); }
 
-    /* Blue pulsing circle */
-    .mic-orb {
-      position: relative; z-index: 2;
-      width: 130px; height: 130px; border-radius: 50%;
-      background: #1daae0;
-      display: flex; align-items: center; justify-content: center;
-      animation: orbPulse 1.5s ease-in-out infinite;
+    /* ═══════════════ SETTINGS SCREEN ═══════════════ */
+    #settings-screen {
+      background:radial-gradient(ellipse at 50% 30%, #0d0d1c 0%, #000 70%);
+      justify-content:flex-start; padding:24px 0 60px; overflow-y:auto; z-index:50;
     }
-    @keyframes orbPulse {
-      0%,100% { box-shadow: 0 0 0 0 rgba(29,170,224,.5); }
-      50%      { box-shadow: 0 0 0 24px rgba(29,170,224,0); }
+    .settings-header {
+      width:90%; max-width:520px; display:flex; align-items:center; gap:14px;
+      margin-bottom:28px;
     }
+    .settings-title { font-size:20px; font-weight:300; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,.85); }
+    .settings-close { margin-left:auto; background:none; border:none; color:rgba(255,255,255,.5); font-size:22px; cursor:pointer; transition:color .2s; }
+    .settings-close:hover { color:#fff; }
 
-    /* Animated wave inside orb */
-    .orb-wave { width: 76px; height: 30px; }
-    .wave-line {
-      fill: none; stroke: #fff;
-      stroke-width: 2.8; stroke-linecap: round;
-    }
+    .settings-section { width:90%; max-width:520px; margin-bottom:28px; }
+    .settings-section-title { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,.35); margin-bottom:12px; }
 
-    .mic-status {
-      position: relative; z-index: 2;
-      margin-top: 28px;
-      font-size: 14px; font-weight: 300;
-      letter-spacing: 2.5px; text-transform: uppercase;
-      color: rgba(255,255,255,.6);
+    .settings-row {
+      display:flex; align-items:center; gap:12px;
+      padding:12px 14px; margin-bottom:4px;
+      background:rgba(255,255,255,.04); border:0.5px solid rgba(255,255,255,.08);
+      border-radius:6px;
     }
-    .mic-words {
-      position: relative; z-index: 2;
-      margin-top: 14px;
-      font-size: 18px; font-weight: 300;
-      color: #fff; min-height: 28px;
-      max-width: 80vw; text-align: center;
+    .settings-row label { font-size:13px; color:rgba(255,255,255,.75); flex:1; }
+    .settings-row input[type=text] {
+      background:rgba(255,255,255,.08); border:0.5px solid rgba(255,255,255,.15);
+      color:#fff; border-radius:4px; padding:5px 10px; font-size:13px;
+      font-family:inherit; outline:none; width:180px;
     }
-    .mic-close-hint {
-      position: absolute; bottom: 36px; z-index: 3;
-      font-size: 12px; color: rgba(255,255,255,.3);
-      letter-spacing: 1.5px; cursor: pointer;
-      text-transform: uppercase;
-      transition: color .2s;
+    .settings-row input[type=text]:focus { border-color:#1877c8; }
+    .settings-row input[type=color] { width:36px; height:28px; border:none; border-radius:4px; cursor:pointer; padding:0; background:none; }
+
+    .toggle {
+      width:44px; height:24px; border-radius:12px; background:rgba(255,255,255,.15);
+      position:relative; cursor:pointer; transition:background .2s; flex-shrink:0;
     }
-    .mic-close-hint:hover { color: rgba(255,255,255,.65); }
+    .toggle.on { background:#1877c8; }
+    .toggle::after {
+      content:''; position:absolute; width:18px; height:18px; border-radius:50%;
+      background:#fff; top:3px; left:3px; transition:left .2s;
+    }
+    .toggle.on::after { left:23px; }
+
+    .save-btn {
+      width:90%; max-width:520px; padding:13px;
+      background:#1877c8; border:none; color:#fff;
+      font-size:15px; font-family:inherit; font-weight:500;
+      border-radius:6px; cursor:pointer; transition:background .2s;
+      margin-top:8px;
+    }
+    .save-btn:hover { background:#1562a8; }
   </style>
 </head>
 <body>
 
-  <!-- ══════════════════════════════════
-       SCREEN 1 — GRID (main screen)
-  ══════════════════════════════════ -->
-  <div class="screen" id="grid-screen">
+<!-- ══════════════════════════════════
+     SCREEN 1 — GRID
+══════════════════════════════════ -->
+<div class="screen" id="grid-screen">
 
-    <div class="tile-grid">
+  <!-- settings gear -->
+  <button class="settings-btn" onclick="showScreen('settings-screen')" aria-label="Settings">⚙</button>
 
-      <!-- CLOCK — tall tile -->
-      <div class="tile t-clock" onclick="openLink('https://www.timeanddate.com/calendar/')">
-        <div class="clock-inner">
-          <svg class="clock-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-            <!-- ring -->
-            <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2.5"/>
-            <!-- hour hand -->
-            <line id="hh" x1="32" y1="32" x2="32" y2="16" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" stroke-linecap="round"/>
-            <!-- minute hand -->
-            <line id="hm" x1="32" y1="32" x2="32" y2="10" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round"/>
-            <!-- center dot -->
-            <circle cx="32" cy="32" r="2.5" fill="#fff"/>
-          </svg>
-          <div class="clock-digital" id="clockTime">00:00</div>
-          <div class="clock-dow"    id="clockDow">Monday</div>
-        </div>
-      </div>
+  <div class="tile-grid">
 
-      <!-- FIND A RESTAURANT -->
-      <div class="tile t-restaurant" onclick="goTo('restaurant')">
-        <div class="tile-top">
-          <div class="tile-dot"></div>
-        </div>
-        <div class="tile-label">Find a<br>restaurant</div>
-      </div>
-
-      <!-- SEARCH INTERNET -->
-      <div class="tile t-search" onclick="goTo('search')">
-        <div class="tile-top">
-          <svg class="tile-icon-svg" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="8" stroke="rgba(255,255,255,0.9)" stroke-width="2.2"/>
-            <line x1="18" y1="18" x2="25" y2="25" stroke="rgba(255,255,255,0.9)" stroke-width="2.2" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="tile-label">Search Internet</div>
-      </div>
-
-      <!-- CHECK SPORTS — daily rotating -->
-      <div class="tile t-sports" id="sports-tile" onclick="goTo('sports')">
-        <div class="tile-top">
-          <svg class="tile-icon-svg" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="14" cy="14" r="10" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
-            <line x1="14" y1="4" x2="14" y2="24" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/>
-            <path d="M4 14 Q14 8 24 14 Q14 20 4 14Z" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" fill="none"/>
-          </svg>
-        </div>
-        <div class="sport-day"    id="sport-day">Today</div>
-        <div class="sport-name"   id="sport-name">Check sports</div>
-        <div class="sport-league" id="sport-league"></div>
-      </div>
-
-      <!-- CHECK TICKETS -->
-      <div class="tile t-tickets" onclick="goTo('tickets')">
-        <div class="tile-top">
-          <svg class="tile-icon-svg" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="7" width="22" height="15" rx="2" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
-            <line x1="3" y1="12" x2="25" y2="12" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/>
-            <line x1="9" y1="7" x2="9" y2="5" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"/>
-            <line x1="19" y1="7" x2="19" y2="5" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="tile-label">Check tickets</div>
-      </div>
-
-    </div><!-- /tile-grid -->
-
-    <!-- SEARCH BAR -->
-    <div class="search-row">
-      <div class="search-placeholder" id="searchPlaceholder">
-        Type here to get <span>started</span>
-      </div>
-      <input type="text" id="searchInput"
-        oninput="onSearchInput(this.value)"
-        onkeydown="if(event.key==='Enter') doSearch()" />
-      <button class="search-go" onclick="doSearch()">&#8250;</button>
-    </div>
-
-    <!-- MIC BUTTON -->
-    <div class="mic-wrap">
-      <button class="mic-btn" onclick="openMic()" aria-label="Voice input">
-        <svg class="mic-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-6 9a6 6 0 0 0 12 0h2a8 8 0 0 1-7 7.93V21h-2v-3.07A8 8 0 0 1 4 10h2z"/>
+    <!-- CLOCK -->
+    <div class="tile t-clock" onclick="showResult('clock')">
+      <div class="clock-inner">
+        <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2.5"/>
+          <line id="hh" x1="32" y1="32" x2="32" y2="16" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" stroke-linecap="round"/>
+          <line id="hm" x1="32" y1="32" x2="32" y2="10" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="32" cy="32" r="2.5" fill="#fff"/>
         </svg>
-      </button>
+        <div class="clock-digital" id="clockTime">00:00</div>
+        <div class="clock-dow"     id="clockDow">Monday</div>
+      </div>
     </div>
 
-  </div><!-- /#grid-screen -->
-
-
-  <!-- ══════════════════════════════════
-       SCREEN 2 — RESULT
-  ══════════════════════════════════ -->
-  <div class="screen hidden" id="result-screen">
-
-    <div class="result-header">
-      <div class="result-icon-circle" id="result-icon"></div>
-      <div class="result-title" id="result-title">Find a restaurant</div>
+    <!-- RESTAURANT -->
+    <div class="tile t-restaurant" onclick="showResult('restaurant')">
+      <div class="tile-top"><div class="tile-dot"></div></div>
+      <div class="tile-label" id="lbl-restaurant">Find a<br>restaurant</div>
     </div>
 
-    <div class="result-body" id="result-body">
-      Looking for restaurants near you…
+    <!-- SEARCH -->
+    <div class="tile t-search" onclick="showResult('search')">
+      <div class="tile-top">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="11" cy="11" r="7.5" stroke="rgba(255,255,255,.9)" stroke-width="2.2"/>
+          <line x1="17" y1="17" x2="24" y2="24" stroke="rgba(255,255,255,.9)" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="tile-label" id="lbl-search">Search Internet</div>
     </div>
 
-    <div class="result-input-row" id="result-input-row">
-      Find a restaurant nearby
+    <!-- SPORTS -->
+    <div class="tile t-sports" onclick="showResult('sports')">
+      <div class="tile-top">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="13" cy="13" r="9.5" stroke="rgba(255,255,255,.85)" stroke-width="2"/>
+          <line x1="13" y1="3.5" x2="13" y2="22.5" stroke="rgba(255,255,255,.85)" stroke-width="1.5"/>
+          <path d="M3.5 13 Q13 8 22.5 13 Q13 18 3.5 13Z" stroke="rgba(255,255,255,.85)" stroke-width="1.5" fill="none"/>
+        </svg>
+      </div>
+      <div class="sport-day"    id="sport-day">Today</div>
+      <div class="sport-name"   id="sport-name">Check sports</div>
+      <div class="sport-league" id="sport-league"></div>
     </div>
 
-    <button class="result-open-btn" id="result-open-btn" onclick="openResult()">
-      Open ›
-    </button>
-
-    <!-- back arrow — matches original screenshot -->
-    <button class="back-btn" onclick="goBack()" aria-label="Back">&#8249;</button>
-
-  </div><!-- /#result-screen -->
-
-
-  <!-- ══════════════════════════════════
-       SCREEN 3 — MIC OVERLAY
-  ══════════════════════════════════ -->
-  <div class="screen hidden" id="mic-screen">
-
-    <div class="geo">
-      <div class="ga"></div>
-      <div class="gb"></div>
-      <div class="gc"></div>
+    <!-- TICKETS -->
+    <div class="tile t-tickets" onclick="showResult('tickets')">
+      <div class="tile-top">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="7" width="22" height="13" rx="2" stroke="rgba(255,255,255,.85)" stroke-width="2"/>
+          <line x1="2" y1="12" x2="24" y2="12" stroke="rgba(255,255,255,.85)" stroke-width="1.5"/>
+          <line x1="8" y1="7" x2="8" y2="4.5" stroke="rgba(255,255,255,.85)" stroke-width="2" stroke-linecap="round"/>
+          <line x1="18" y1="7" x2="18" y2="4.5" stroke="rgba(255,255,255,.85)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="tile-label" id="lbl-tickets">Check tickets</div>
     </div>
 
-    <div class="mic-orb">
-      <svg class="orb-wave" viewBox="0 0 76 30" xmlns="http://www.w3.org/2000/svg">
-        <path class="wave-line" id="wavePath"
-          d="M4,15 C10,6 16,24 26,15 C36,6 42,24 52,15 C60,6 66,24 72,15"/>
+  </div>
+
+  <!-- search bar -->
+  <div class="search-row">
+    <div class="search-ph" id="searchPh">Type here to get <span>started</span></div>
+    <input type="text" id="searchInput" oninput="onSI(this.value)" onkeydown="if(event.key==='Enter')doSearch()"/>
+    <button class="search-go" onclick="doSearch()">›</button>
+  </div>
+
+  <!-- mic -->
+  <div class="mic-wrap">
+    <button class="mic-btn" onclick="openMic()" aria-label="Voice input">
+      <svg class="mic-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-6 9a6 6 0 0 0 12 0h2a8 8 0 0 1-7 7.93V21h-2v-3.07A8 8 0 0 1 4 10h2z"/>
       </svg>
+    </button>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 2 — RESULT
+══════════════════════════════════ -->
+<div class="screen hidden" id="result-screen">
+  <div class="result-header">
+    <div class="result-icon-circle" id="r-icon"></div>
+    <div class="result-title" id="r-title">Result</div>
+  </div>
+  <div class="result-content" id="r-content"></div>
+  <button class="back-btn" onclick="showScreen('grid-screen')">‹</button>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 3 — MIC
+══════════════════════════════════ -->
+<div class="screen hidden" id="mic-screen">
+  <div class="geo"><div class="ga"></div><div class="gb"></div><div class="gc"></div></div>
+  <div class="mic-orb">
+    <svg class="orb-wave" viewBox="0 0 76 30" xmlns="http://www.w3.org/2000/svg">
+      <path class="wave-line" id="wavePath" d="M4,15 C10,6 16,24 26,15 C36,6 42,24 52,15 C60,6 66,24 72,15"/>
+    </svg>
+  </div>
+  <div class="mic-status" id="micStatus">Listening…</div>
+  <div class="mic-words"  id="micWords"></div>
+  <div class="mic-close-hint" onclick="closeMic()">✕ &nbsp;tap to close</div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 4 — SETTINGS
+══════════════════════════════════ -->
+<div class="screen hidden" id="settings-screen">
+
+  <div class="settings-header">
+    <div class="settings-title">⚙ Settings</div>
+    <button class="settings-close" onclick="showScreen('grid-screen')">✕</button>
+  </div>
+
+  <!-- Assistant name -->
+  <div class="settings-section">
+    <div class="settings-section-title">Assistant</div>
+    <div class="settings-row">
+      <label>Assistant Name</label>
+      <input type="text" id="set-name" value="BlackBerry Assistant Pro" placeholder="e.g. My Assistant"/>
     </div>
+    <div class="settings-row">
+      <label>Voice Speed</label>
+      <input type="range" id="set-speed" min="0.5" max="1.5" step="0.1" value="0.97" style="width:140px; accent-color:#1877c8;"/>
+      <span id="set-speed-val" style="font-size:12px; opacity:.6; width:30px;">1.0</span>
+    </div>
+    <div class="settings-row">
+      <label>Voice Pitch</label>
+      <input type="range" id="set-pitch" min="0.5" max="2" step="0.1" value="1.1" style="width:140px; accent-color:#1877c8;"/>
+      <span id="set-pitch-val" style="font-size:12px; opacity:.6; width:30px;">1.1</span>
+    </div>
+  </div>
 
-    <div class="mic-status" id="micStatus">Listening…</div>
-    <div class="mic-words"  id="micWords"></div>
+  <!-- Tile colours -->
+  <div class="settings-section">
+    <div class="settings-section-title">Tile Colours</div>
+    <div class="settings-row">
+      <label>Clock tile</label>
+      <input type="color" id="col-clock" value="#6a8c3f"/>
+    </div>
+    <div class="settings-row">
+      <label>Restaurant tile</label>
+      <input type="color" id="col-restaurant" value="#738f3e"/>
+    </div>
+    <div class="settings-row">
+      <label>Search tile</label>
+      <input type="color" id="col-search" value="#1877c8"/>
+    </div>
+    <div class="settings-row">
+      <label>Sports tile</label>
+      <input type="color" id="col-sports" value="#8c2222"/>
+    </div>
+    <div class="settings-row">
+      <label>Tickets tile</label>
+      <input type="color" id="col-tickets" value="#952626"/>
+    </div>
+  </div>
 
-    <div class="mic-close-hint" onclick="closeMic()">✕ &nbsp; tap to close</div>
+  <!-- Tile labels -->
+  <div class="settings-section">
+    <div class="settings-section-title">Tile Labels</div>
+    <div class="settings-row">
+      <label>Restaurant label</label>
+      <input type="text" id="lbl-set-restaurant" value="Find a restaurant"/>
+    </div>
+    <div class="settings-row">
+      <label>Search label</label>
+      <input type="text" id="lbl-set-search" value="Search Internet"/>
+    </div>
+    <div class="settings-row">
+      <label>Tickets label</label>
+      <input type="text" id="lbl-set-tickets" value="Check tickets"/>
+    </div>
+  </div>
 
-  </div><!-- /#mic-screen -->
+  <!-- Toggles -->
+  <div class="settings-section">
+    <div class="settings-section-title">Features</div>
+    <div class="settings-row">
+      <label>Speak results aloud</label>
+      <div class="toggle on" id="tog-speak" onclick="toggleSetting('tog-speak')"></div>
+    </div>
+    <div class="settings-row">
+      <label>Show weather in results</label>
+      <div class="toggle on" id="tog-weather" onclick="toggleSetting('tog-weather')"></div>
+    </div>
+    <div class="settings-row">
+      <label>Animate wave on mic</label>
+      <div class="toggle on" id="tog-wave" onclick="toggleSetting('tog-wave')"></div>
+    </div>
+  </div>
 
+  <!-- Location for weather -->
+  <div class="settings-section">
+    <div class="settings-section-title">Location (for weather & restaurants)</div>
+    <div class="settings-row">
+      <label>City</label>
+      <input type="text" id="set-city" value="New York" placeholder="e.g. Los Angeles"/>
+    </div>
+    <div class="settings-row">
+      <label>Favourite Sports Team</label>
+      <input type="text" id="set-team" value="" placeholder="e.g. Cowboys, Lakers…"/>
+    </div>
+  </div>
 
-  <script>
-    /* ════════════════════════════
-       CLOCK
-    ════════════════════════════ */
-    const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  <button class="save-btn" onclick="saveSettings()">Save Settings</button>
 
-    function updateClock() {
-      const now = new Date();
-      const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
-      const hDeg = (h % 12) * 30 + m * 0.5;
-      const mDeg = m * 6 + s * 0.1;
+</div>
 
-      // Rotate SVG lines around centre (32,32)
-      const hRad = (hDeg - 90) * Math.PI / 180;
-      const mRad = (mDeg - 90) * Math.PI / 180;
-      const hLen = 16, mLen = 22;
+<script>
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+let cfg = {
+  name:'BlackBerry Assistant Pro',
+  speed:0.97, pitch:1.1,
+  speakResults:true, showWeather:true, animateWave:true,
+  city:'New York', team:'',
+  colors:{ clock:'#6a8c3f', restaurant:'#738f3e', search:'#1877c8', sports:'#8c2222', tickets:'#952626' },
+  labels:{ restaurant:'Find a\nrestaurant', search:'Search Internet', tickets:'Check tickets' }
+};
 
-      document.getElementById('hh').setAttribute('x2', 32 + Math.cos(hRad) * hLen);
-      document.getElementById('hh').setAttribute('y2', 32 + Math.sin(hRad) * hLen);
-      document.getElementById('hm').setAttribute('x2', 32 + Math.cos(mRad) * mLen);
-      document.getElementById('hm').setAttribute('y2', 32 + Math.sin(mRad) * mLen);
+/* load saved config */
+try { const s=localStorage.getItem('bbcfg'); if(s) cfg=Object.assign(cfg,JSON.parse(s)); } catch(e){}
 
-      document.getElementById('clockTime').textContent =
-        h.toString().padStart(2,'0') + ':' + m.toString().padStart(2,'0');
-      document.getElementById('clockDow').textContent = DAYS[now.getDay()];
+/* ════════════════════════════════════════
+   CLOCK
+════════════════════════════════════════ */
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function updateClock(){
+  const n=new Date(), h=n.getHours(), m=n.getMinutes(), s=n.getSeconds();
+  const hR=((h%12)*30+m*0.5-90)*Math.PI/180;
+  const mR=(m*6+s*0.1-90)*Math.PI/180;
+  const set=(id,r,l)=>{
+    const el=document.getElementById(id);
+    el.setAttribute('x2', (32+Math.cos(r)*l).toFixed(2));
+    el.setAttribute('y2', (32+Math.sin(r)*l).toFixed(2));
+  };
+  set('hh',hR,16); set('hm',mR,22);
+  document.getElementById('clockTime').textContent=h.toString().padStart(2,'0')+':'+m.toString().padStart(2,'0');
+  document.getElementById('clockDow').textContent=DAYS[n.getDay()];
+}
+updateClock(); setInterval(updateClock,1000);
+
+/* ════════════════════════════════════════
+   DAILY SPORTS
+════════════════════════════════════════ */
+const SPORTS=[
+  {day:'Sunday',    name:'NFL Scores',         league:'All Games'},
+  {day:'Monday',    name:'Monday Night NFL',   league:'NFL Football'},
+  {day:'Tuesday',   name:'NBA Standings',      league:'NBA Basketball'},
+  {day:'Wednesday', name:'MLB Scores',          league:'Major League Baseball'},
+  {day:'Thursday',  name:'Thursday Night NFL', league:'NFL Football'},
+  {day:'Friday',    name:'NBA Games',           league:'NBA Basketball'},
+  {day:'Saturday',  name:'College Football',   league:'NCAA Football'},
+];
+const ts=SPORTS[new Date().getDay()];
+document.getElementById('sport-day').textContent   =ts.day;
+document.getElementById('sport-name').textContent  =ts.name;
+document.getElementById('sport-league').textContent=ts.league;
+
+/* ════════════════════════════════════════
+   SCREENS
+════════════════════════════════════════ */
+function showScreen(id){
+  ['grid-screen','result-screen','mic-screen','settings-screen'].forEach(s=>{
+    document.getElementById(s).classList.toggle('hidden',s!==id);
+  });
+}
+
+/* ════════════════════════════════════════
+   IN-APP RESULT CONTENT
+════════════════════════════════════════ */
+function iconHTML(color,emoji){
+  return `<div style="width:56px;height:56px;border-radius:50%;background:${color};font-size:24px;display:flex;align-items:center;justify-content:center;">${emoji}</div>`;
+}
+
+function showResult(key){
+  const content=document.getElementById('r-content');
+  content.innerHTML=`<div class="loading">Loading…</div>`;
+  showScreen('result-screen');
+
+  switch(key){
+    case 'clock':    showClock();      break;
+    case 'restaurant': showRestaurant(); break;
+    case 'search':   showSearchPanel(); break;
+    case 'sports':   showSports();     break;
+    case 'tickets':  showTickets();    break;
+  }
+}
+
+/* ── CLOCK / DATE / WEATHER ── */
+function showClock(){
+  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.clock,'🕐');
+  document.getElementById('r-title').textContent='Time & Date';
+  const n=new Date();
+  const timeStr=n.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const dateStr=n.toLocaleDateString([],{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  let html=`
+    <div class="rc-item"><div class="rc-text">
+      <div class="rc-name" style="font-size:32px;letter-spacing:2px;">${timeStr}</div>
+      <div class="rc-sub">${dateStr}</div>
+    </div></div>`;
+
+  if(cfg.showWeather){
+    html+=`<div class="rc-item"><div class="rc-text">
+      <div class="rc-name">📍 ${cfg.city}</div>
+      <div class="rc-sub">Weather info — set your city in Settings for accurate data.</div>
+    </div></div>`;
+  }
+
+  document.getElementById('r-content').innerHTML=html;
+  if(cfg.speakResults) speak(`The time is ${timeStr}. Today is ${dateStr}.`);
+}
+
+/* ── RESTAURANT ── */
+function showRestaurant(){
+  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.restaurant,'🍽');
+  document.getElementById('r-title').textContent='Restaurants Near You';
+  const city=cfg.city||'your area';
+  const items=[
+    {name:'Local Italian Kitchen',sub:'Italian · ★★★★☆ · 0.3 miles'},
+    {name:'The Burger Joint',     sub:'American · ★★★★★ · 0.5 miles'},
+    {name:'Sushi House',          sub:'Japanese · ★★★★☆ · 0.7 miles'},
+    {name:'Taco Corner',          sub:'Mexican · ★★★☆☆ · 0.8 miles'},
+    {name:'Green Garden',         sub:'Vegetarian · ★★★★☆ · 1.1 miles'},
+  ];
+  let html=`<div class="rc-item"><div class="rc-text"><div class="rc-sub">Top-rated restaurants in <strong style="color:#fff">${city}</strong> area:</div></div></div>`;
+  items.forEach((it,i)=>{
+    html+=`<div class="rc-item"><div class="rc-num">${i+1}</div><div class="rc-text"><div class="rc-name">${it.name}</div><div class="rc-sub">${it.sub}</div></div></div>`;
+  });
+  document.getElementById('r-content').innerHTML=html;
+  if(cfg.speakResults) speak(`Here are some restaurants near ${city}. ${items.map(i=>i.name).join(', ')}.`);
+}
+
+/* ── SEARCH PANEL ── */
+function showSearchPanel(){
+  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.search,'🔍');
+  document.getElementById('r-title').textContent='Search';
+  document.getElementById('r-content').innerHTML=`
+    <div style="margin-bottom:14px; font-size:13px; color:rgba(255,255,255,.5);">Ask me anything:</div>
+    <div style="display:flex; gap:8px; margin-bottom:18px;">
+      <input id="in-search" type="text" placeholder="Type your question…" style="flex:1;background:rgba(255,255,255,.08);border:0.5px solid rgba(255,255,255,.2);color:#fff;padding:9px 12px;border-radius:4px;font-family:inherit;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')inAppSearch()"/>
+      <button onclick="inAppSearch()" style="background:#1877c8;border:none;color:#fff;padding:9px 16px;border-radius:4px;cursor:pointer;font-size:14px;">Go</button>
+    </div>
+    <div id="search-result" style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.8;"></div>`;
+}
+
+function inAppSearch(){
+  const q=(document.getElementById('in-search').value||'').trim().toLowerCase();
+  if(!q) return;
+  const sr=document.getElementById('search-result');
+  const answers={
+    'hello':'Hello! How can I help you today?',
+    'hi':'Hi there! What can I do for you?',
+    'time':()=>`The current time is ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}.`,
+    'date':()=>`Today is ${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'})}.`,
+    'weather':()=>`I don't have live weather data, but you can set your city in ⚙ Settings. Currently set to: ${cfg.city}.`,
+    'capital of france':'The capital of France is Paris.',
+    'capital of usa':'The capital of the United States is Washington D.C.',
+    'capital of england':'The capital of England is London.',
+    'how are you':'I am doing great, thank you for asking!',
+    'your name':()=>`My name is ${cfg.name}.`,
+    'who are you':()=>`I am ${cfg.name}, your personal assistant.`,
+    'joke':'Why don\'t scientists trust atoms? Because they make up everything! 😄',
+    'sports':()=>`Today\'s featured sport is ${ts.name} — ${ts.league}.`,
+  };
+  let reply='';
+  for(const [k,v] of Object.entries(answers)){
+    if(q.includes(k)){ reply=typeof v==='function'?v():v; break; }
+  }
+  if(!reply) reply=`I searched for "<strong style="color:#fff">${document.getElementById('in-search').value}</strong>". For live results, try Google — but I can answer questions about time, date, weather settings, sports, and general knowledge!`;
+  sr.innerHTML=reply;
+  if(cfg.speakResults) speak(reply.replace(/<[^>]+>/g,''));
+}
+
+/* ── SPORTS ── */
+function showSports(){
+  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.sports,'🏆');
+  document.getElementById('r-title').textContent=ts.name;
+  const team=cfg.team;
+  const day=new Date().getDay();
+
+  const sportContent={
+    0:{headline:'NFL Sunday Games',items:['Chiefs vs Raiders — 1:00 PM ET','Cowboys vs Giants — 4:25 PM ET','Packers vs Bears — 8:20 PM ET','49ers vs Seahawks — 4:05 PM ET']},
+    1:{headline:'Monday Night Football',items:['Bills vs Dolphins — 8:15 PM ET','Broncos vs Chargers — 8:15 PM ET']},
+    2:{headline:'NBA Tuesday',items:['Lakers vs Celtics — 7:30 PM ET','Warriors vs Suns — 9:00 PM ET','Heat vs Bucks — 8:00 PM ET','Nuggets vs Clippers — 10:00 PM ET']},
+    3:{headline:'MLB Wednesday',items:['Yankees vs Red Sox — 7:05 PM ET','Dodgers vs Giants — 9:45 PM ET','Cubs vs Cardinals — 7:15 PM ET','Astros vs Rangers — 8:05 PM ET']},
+    4:{headline:'Thursday Night Football',items:['Eagles vs Lions — 8:15 PM ET','Rams vs Cardinals — 8:15 PM ET']},
+    5:{headline:'NBA Friday Night',items:['Knicks vs 76ers — 7:30 PM ET','Spurs vs Mavs — 8:30 PM ET','Timberwolves vs Jazz — 9:00 PM ET','Pelicans vs Thunder — 9:30 PM ET']},
+    6:{headline:'College Football Saturday',items:['Alabama vs Georgia — 3:30 PM ET','Ohio State vs Michigan — 12:00 PM ET','USC vs UCLA — 7:30 PM ET','Clemson vs Florida St — 7:00 PM ET']},
+  };
+
+  const sc=sportContent[day];
+  let html=`<div class="rc-item"><div class="rc-text"><div class="rc-name">${sc.headline}</div><div class="rc-sub">${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}</div></div></div>`;
+  sc.items.forEach(it=>{
+    html+=`<div class="rc-item"><div class="rc-text"><div class="rc-name" style="font-size:13px;">${it}</div></div></div>`;
+  });
+  if(team){
+    html+=`<div class="rc-item" style="margin-top:8px;"><div class="rc-text"><div class="rc-sub" style="color:#1daae0;">⭐ Your team: <strong style="color:#fff">${team}</strong> — check latest scores in the schedule above.</div></div></div>`;
+  }
+
+  document.getElementById('r-content').innerHTML=html;
+  if(cfg.speakResults) speak(`${sc.headline}. Games today: ${sc.items.slice(0,3).join('. ')}.`);
+}
+
+/* ── TICKETS ── */
+function showTickets(){
+  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.tickets,'🎟');
+  document.getElementById('r-title').textContent='Upcoming Events';
+  const city=cfg.city||'your city';
+  const events=[
+    {name:'Taylor Swift — The Eras Tour',  sub:'Stadium · This Saturday · From $120'},
+    {name:'NBA Game — Local Team',         sub:'Arena · This Friday · From $45'},
+    {name:'Comedy Night Live',             sub:'Comedy Club · This Thursday · From $25'},
+    {name:'Symphony Orchestra',            sub:'Concert Hall · Next Tuesday · From $35'},
+    {name:'Hamilton — Broadway',           sub:'Theater · This Weekend · From $89'},
+  ];
+  let html=`<div class="rc-item"><div class="rc-text"><div class="rc-sub">Upcoming events near <strong style="color:#fff">${city}</strong>:</div></div></div>`;
+  events.forEach((ev,i)=>{
+    html+=`<div class="rc-item"><div class="rc-num">${i+1}</div><div class="rc-text"><div class="rc-name">${ev.name}</div><div class="rc-sub">${ev.sub}</div></div></div>`;
+  });
+  document.getElementById('r-content').innerHTML=html;
+  if(cfg.speakResults) speak(`Here are upcoming events near ${city}. ${events.slice(0,3).map(e=>e.name).join(', ')}.`);
+}
+
+/* ════════════════════════════════════════
+   SEARCH BAR (grid screen)
+════════════════════════════════════════ */
+function onSI(v){ document.getElementById('searchPh').style.display=v?'none':'flex'; }
+function doSearch(){
+  const v=document.getElementById('searchInput').value.trim();
+  if(!v) return;
+  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.search,'🔍');
+  document.getElementById('r-title').textContent='Search Results';
+  document.getElementById('r-content').innerHTML=`<div class="loading">Searching…</div>`;
+  showScreen('result-screen');
+  setTimeout(()=>{
+    const low=v.toLowerCase();
+    if(low.includes('weather')||low.includes('rain')||low.includes('temperature')){
+      document.getElementById('r-content').innerHTML=`<div class="rc-item"><div class="rc-text"><div class="rc-name">Weather in ${cfg.city}</div><div class="rc-sub">Set your city in ⚙ Settings for more accurate info.</div></div></div>`;
+      if(cfg.speakResults) speak(`Checking weather for ${cfg.city}.`);
+    } else if(low.includes('sport')||low.includes('score')||low.includes('game')){
+      showSports();
+    } else if(low.includes('restaurant')||low.includes('food')||low.includes('eat')){
+      showRestaurant();
+    } else if(low.includes('ticket')||low.includes('concert')||low.includes('event')){
+      showTickets();
+    } else {
+      document.getElementById('r-content').innerHTML=`<div class="rc-item"><div class="rc-text"><div class="rc-name">You searched for:</div><div class="rc-sub" style="font-size:16px;color:#fff;">${v}</div></div></div><div class="rc-item"><div class="rc-text"><div class="rc-sub">I can search for restaurants, sports, tickets, and answer general questions. Try the Search tile for more options.</div></div></div>`;
+      if(cfg.speakResults) speak(`You searched for ${v}. I can help with restaurants, sports, tickets, and general questions.`);
     }
-    updateClock();
-    setInterval(updateClock, 1000);
+  },600);
+}
 
-    /* ════════════════════════════
-       DAILY SPORTS
-    ════════════════════════════ */
-    const SPORTS = [
-      { day:'Sunday',    name:'NFL Scores',         league:'All Games',             url:'https://www.nfl.com/scores/' },
-      { day:'Monday',    name:'Monday Night NFL',   league:'NFL Football',          url:'https://www.nfl.com/scores/' },
-      { day:'Tuesday',   name:'NBA Standings',      league:'NBA Basketball',        url:'https://www.nba.com/standings' },
-      { day:'Wednesday', name:'MLB Scores',          league:'Major League Baseball', url:'https://www.mlb.com/scores' },
-      { day:'Thursday',  name:'Thursday Night NFL', league:'NFL Football',          url:'https://www.nfl.com/scores/' },
-      { day:'Friday',    name:'NBA Games',           league:'NBA Basketball',        url:'https://www.nba.com/games' },
-      { day:'Saturday',  name:'College Football',   league:'NCAA / ESPN',           url:'https://www.espn.com/college-football/scoreboard' },
-    ];
-    const todaySport = SPORTS[new Date().getDay()];
-    document.getElementById('sport-day').textContent    = todaySport.day;
-    document.getElementById('sport-name').textContent   = todaySport.name;
-    document.getElementById('sport-league').textContent = todaySport.league;
+/* ════════════════════════════════════════
+   MIC + FEMALE VOICE
+════════════════════════════════════════ */
+let femaleVoice=null, recog=null, waveRAF=null, wavePhase=0;
 
-    /* ════════════════════════════
-       SCREEN TRANSITIONS
-    ════════════════════════════ */
-    function showScreen(id) {
-      ['grid-screen','result-screen','mic-screen'].forEach(s => {
-        document.getElementById(s).classList.toggle('hidden', s !== id);
-      });
+function loadVoices(){
+  const vv=window.speechSynthesis.getVoices();
+  const pref=['samantha','zira','victoria','karen','moira','tessa','fiona','female'];
+  for(const p of pref){ const v=vv.find(x=>x.name.toLowerCase().includes(p)); if(v){femaleVoice=v;return;} }
+  femaleVoice=vv.find(v=>!/(male|david|james|mark)/i.test(v.name))||vv[0]||null;
+}
+window.speechSynthesis.onvoiceschanged=loadVoices; loadVoices();
+
+function speak(txt){
+  if(!cfg.speakResults) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.voice=femaleVoice; u.rate=cfg.speed; u.pitch=cfg.pitch;
+  window.speechSynthesis.speak(u);
+}
+
+function animateWave(){
+  wavePhase+=0.12;
+  const pts=[];
+  for(let x=4;x<=72;x+=8) pts.push([x, 15+Math.sin(wavePhase+x*0.18)*9]);
+  let d=`M${pts[0][0]},${pts[0][1].toFixed(1)}`;
+  for(let i=1;i<pts.length;i++){
+    const cpx=(pts[i-1][0]+pts[i][0])/2;
+    d+=` Q${cpx},${pts[i-1][1].toFixed(1)} ${pts[i][0]},${pts[i][1].toFixed(1)}`;
+  }
+  const el=document.getElementById('wavePath'); if(el) el.setAttribute('d',d);
+  waveRAF=requestAnimationFrame(animateWave);
+}
+
+function openMic(){
+  showScreen('mic-screen');
+  document.getElementById('micStatus').textContent='Listening…';
+  document.getElementById('micWords').textContent='';
+  speak(`Hello! I'm ${cfg.name}. What can I help you with?`);
+  if(cfg.animateWave) animateWave();
+  startSpeech();
+}
+
+function closeMic(){
+  showScreen('grid-screen');
+  window.speechSynthesis.cancel();
+  if(recog){ try{recog.stop();}catch(e){} }
+  if(waveRAF){ cancelAnimationFrame(waveRAF); waveRAF=null; }
+}
+
+function startSpeech(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ document.getElementById('micStatus').textContent='Use Chrome for voice'; return; }
+  recog=new SR(); recog.lang='en-US'; recog.interimResults=true; recog.continuous=false;
+  recog.onresult=e=>{
+    let final='',interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal) final+=t; else interim+=t;
     }
+    document.getElementById('micWords').textContent=final||interim;
+    if(final) handleVoice(final.toLowerCase().trim());
+  };
+  recog.onend=()=>{ if(!document.getElementById('micWords').textContent){ document.getElementById('micStatus').textContent="Didn't catch that"; speak("I didn't catch that."); } };
+  recog.onerror=e=>{ document.getElementById('micStatus').textContent='Error: '+e.error; };
+  recog.start();
+}
 
-    function goBack() { showScreen('grid-screen'); }
+const VOICE_CMDS=[
+  {keys:['restaurant','food','eat','hungry','dinner','lunch','pizza','burger','taco'], go:'restaurant'},
+  {keys:['sport','nba','nfl','score','game','basketball','football','baseball','mlb','standings'], go:'sports'},
+  {keys:['ticket','concert','event','show','venue'], go:'tickets'},
+  {keys:['search','internet','google','find','look up'], go:'search'},
+  {keys:['weather','rain','temperature','forecast','hot','cold','sunny'], go:'weather-voice'},
+  {keys:['time','clock'], go:'time-voice'},
+  {keys:['date','day','today'], go:'date-voice'},
+  {keys:['hello','hi ','hey '], go:'hello-voice'},
+  {keys:['your name','who are you','what are you'], go:'name-voice'},
+];
 
-    /* ════════════════════════════
-       TILE ACTIONS
-    ════════════════════════════ */
-    const TILE_DATA = {
-      restaurant: {
-        color: '#6a8c3f',
-        iconSVG: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="28" fill="#6a8c3f"/><path d="M20 16v24M20 16c0 5 6 8 6 12H14c0-4 6-7 6-12z" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M34 16v8a6 6 0 0 0 6 6v14" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="34" y1="24" x2="40" y2="24" stroke="#fff" stroke-width="2"/></svg>`,
-        title: 'Find a restaurant',
-        body: 'Search for the best restaurants near you on Yelp — ratings, menus, reviews, and directions.',
-        inputHint: 'Find a restaurant nearby',
-        url: 'https://www.yelp.com/search?find_desc=restaurants'
-      },
-      search: {
-        color: '#1877c8',
-        iconSVG: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="28" fill="#1877c8"/><circle cx="24" cy="24" r="9" stroke="#fff" stroke-width="2.5"/><line x1="30" y1="30" x2="40" y2="40" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>`,
-        title: 'Search Internet',
-        body: 'Search the web with Google — find anything from news and weather to directions and more.',
-        inputHint: 'Search the internet',
-        url: 'https://www.google.com'
-      },
-      sports: {
-        color: '#8c2222',
-        iconSVG: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="28" fill="#8c2222"/><circle cx="28" cy="28" r="12" stroke="#fff" stroke-width="2"/><line x1="28" y1="16" x2="28" y2="40" stroke="#fff" stroke-width="1.5"/><path d="M16 28 Q28 22 40 28 Q28 34 16 28Z" stroke="#fff" stroke-width="1.5" fill="none"/></svg>`,
-        title: todaySport.name,
-        body: `Today\'s featured sport: ${todaySport.league}. Check live scores, standings, and highlights.`,
-        inputHint: 'Check sports scores',
-        url: todaySport.url
-      },
-      tickets: {
-        color: '#952626',
-        iconSVG: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="28" fill="#952626"/><rect x="12" y="18" width="32" height="20" rx="3" stroke="#fff" stroke-width="2"/><line x1="12" y1="25" x2="44" y2="25" stroke="#fff" stroke-width="1.5"/><line x1="20" y1="18" x2="20" y2="15" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="36" y1="18" x2="36" y2="15" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`,
-        title: 'Check tickets',
-        body: 'Find tickets for concerts, sports events, theatre, and more on Ticketmaster.',
-        inputHint: 'Check event tickets',
-        url: 'https://www.ticketmaster.com'
-      },
-    };
-
-    let currentUrl = '';
-
-    function goTo(key) {
-      const d = TILE_DATA[key];
-      document.getElementById('result-icon').innerHTML = d.iconSVG;
-      document.getElementById('result-title').textContent  = d.title;
-      document.getElementById('result-body').textContent   = d.body;
-      document.getElementById('result-input-row').textContent = d.inputHint;
-      currentUrl = d.url;
-      showScreen('result-screen');
-    }
-
-    function openResult() {
-      if (currentUrl) window.open(currentUrl, '_blank');
-    }
-
-    function openLink(url) { window.open(url, '_blank'); }
-
-    /* ════════════════════════════
-       SEARCH BAR
-    ════════════════════════════ */
-    function onSearchInput(val) {
-      document.getElementById('searchPlaceholder').style.display = val ? 'none' : 'flex';
-    }
-
-    const SEARCH_LINKS = {
-      taco:    'https://www.yelp.com/search?find_desc=tacos',
-      pizza:   'https://www.google.com/search?q=pizza+near+me',
-      restaurant: 'https://www.yelp.com/search?find_desc=restaurants',
-      weather: 'https://weather.com',
-      laker:   'https://www.espn.com/nba/',
-      nba:     'https://www.nba.com/scores',
-      nfl:     'https://www.nfl.com/scores/',
-      sport:   'https://www.espn.com',
-      ticket:  'https://www.ticketmaster.com',
-      concert: 'https://www.ticketmaster.com',
-    };
-
-    function doSearch() {
-      const val = document.getElementById('searchInput').value.trim();
-      if (!val) return;
-      const low = val.toLowerCase();
-      for (const [k, u] of Object.entries(SEARCH_LINKS)) {
-        if (low.includes(k)) { window.open(u, '_blank'); return; }
-      }
-      window.open('https://www.google.com/search?q=' + encodeURIComponent(val), '_blank');
-    }
-
-    /* ════════════════════════════
-       MIC  +  FEMALE VOICE
-    ════════════════════════════ */
-    let femaleVoice  = null;
-    let recognition  = null;
-    let waveTimer    = null;
-
-    function loadVoices() {
-      const voices = window.speechSynthesis.getVoices();
-      const prefer = ['samantha','zira','victoria','karen','moira','tessa','fiona','female'];
-      for (const name of prefer) {
-        const v = voices.find(x => x.name.toLowerCase().includes(name));
-        if (v) { femaleVoice = v; return; }
-      }
-      femaleVoice = voices.find(v =>
-        !/(male|david|james|mark|google uk english male)/i.test(v.name)
-      ) || voices[0] || null;
-    }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    loadVoices();
-
-    function speak(text) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.voice = femaleVoice;
-      u.rate  = 0.96;
-      u.pitch = 1.1;
-      window.speechSynthesis.speak(u);
-    }
-
-    /* Animate wave path */
-    let wavePhase = 0;
-    function animateWave() {
-      wavePhase += 0.12;
-      const amp = 9;
-      const pts = [];
-      for (let x = 4; x <= 72; x += 8) {
-        const y = 15 + Math.sin(wavePhase + x * 0.18) * amp;
-        pts.push(`${x},${y.toFixed(1)}`);
-      }
-      // build smooth path
-      const p = `M${pts[0]} ` + pts.slice(1).map((pt,i) => {
-        const prev = pts[i].split(',');
-        const cur  = pt.split(',');
-        const cpx  = (parseFloat(prev[0]) + parseFloat(cur[0])) / 2;
-        return `Q${cpx},${prev[1]} ${cur[0]},${cur[1]}`;
-      }).join(' ');
-      const el = document.getElementById('wavePath');
-      if (el) el.setAttribute('d', p);
-      waveTimer = requestAnimationFrame(animateWave);
-    }
-
-    function openMic() {
-      showScreen('mic-screen');
-      document.getElementById('micStatus').textContent = 'Listening…';
-      document.getElementById('micWords').textContent  = '';
-      speak("Hello! I'm listening. What can I help you with?");
-      animateWave();
-      startSpeech();
-    }
-
-    function closeMic() {
-      showScreen('grid-screen');
-      window.speechSynthesis.cancel();
-      if (recognition) { try { recognition.stop(); } catch(e){} }
-      if (waveTimer)   { cancelAnimationFrame(waveTimer); waveTimer = null; }
-    }
-
-    function startSpeech() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) {
-        document.getElementById('micStatus').textContent = 'Voice not supported — use Chrome';
-        speak('Sorry, voice recognition needs Chrome or Edge.');
-        return;
-      }
-      recognition = new SR();
-      recognition.lang = 'en-US';
-      recognition.interimResults = true;
-      recognition.continuous     = false;
-
-      recognition.onresult = e => {
-        let final = '', interim = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const t = e.results[i][0].transcript;
-          if (e.results[i].isFinal) final += t; else interim += t;
+function handleVoice(text){
+  document.getElementById('micStatus').textContent='Got it!';
+  for(const cmd of VOICE_CMDS){
+    if(cmd.keys.some(k=>text.includes(k))){
+      switch(cmd.go){
+        case 'restaurant': speak('Finding restaurants near you.'); setTimeout(()=>{closeMic();showResult('restaurant');},1600); return;
+        case 'sports':     speak('Loading sports scores.'); setTimeout(()=>{closeMic();showResult('sports');},1600); return;
+        case 'tickets':    speak('Finding upcoming events for you.'); setTimeout(()=>{closeMic();showResult('tickets');},1600); return;
+        case 'search':     speak('Opening search.'); setTimeout(()=>{closeMic();showResult('search');},1600); return;
+        case 'weather-voice': {
+          const r=`Weather in ${cfg.city}. Set your city in settings for more accurate data.`;
+          speak(r); document.getElementById('micWords').textContent=r;
+          setTimeout(closeMic,3500); return;
         }
-        document.getElementById('micWords').textContent = final || interim;
-        if (final) handleVoice(final.toLowerCase().trim());
-      };
-
-      recognition.onend = () => {
-        const w = document.getElementById('micWords').textContent;
-        if (!w) {
-          document.getElementById('micStatus').textContent = "Didn't catch that";
-          speak("I didn't catch that. Please try again.");
+        case 'time-voice': {
+          const r=`The time is ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}.`;
+          speak(r); document.getElementById('micWords').textContent=r;
+          setTimeout(closeMic,3000); return;
         }
-      };
-
-      recognition.onerror = e => {
-        document.getElementById('micStatus').textContent = 'Error: ' + e.error;
-      };
-
-      recognition.start();
-    }
-
-    const VOICE_CMDS = [
-      { keys:['restaurant','food','eat','hungry','pizza','burger','taco','lunch','dinner'],
-        say:'Opening restaurant search for you!',
-        go: () => goTo('restaurant') },
-      { keys:['weather','rain','temperature','forecast','hot','cold'],
-        say:'Let me check the weather for you.',
-        go: () => { window.open('https://weather.com','_blank'); closeMic(); } },
-      { keys:['sport','nba','nfl','score','game','basketball','football','baseball','mlb'],
-        say:'Opening sports scores!',
-        go: () => goTo('sports') },
-      { keys:['ticket','concert','event','show','venue'],
-        say:'Opening Ticketmaster for tickets.',
-        go: () => goTo('tickets') },
-      { keys:['search','google','find','look up','internet'],
-        say:'Opening a search for you.',
-        go: () => goTo('search') },
-      { keys:['time','clock','what time'],
-        say: () => { const n=new Date(); return `It's ${n.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}.`; },
-        go: null },
-      { keys:['hello','hi ','hey ','howdy'],
-        say:'Hello! How can I help you today?',
-        go: null },
-    ];
-
-    function handleVoice(text) {
-      document.getElementById('micStatus').textContent = 'Got it!';
-      for (const cmd of VOICE_CMDS) {
-        if (cmd.keys.some(k => text.includes(k))) {
-          const reply = typeof cmd.say === 'function' ? cmd.say() : cmd.say;
-          speak(reply);
-          document.getElementById('micWords').textContent = reply;
-          if (cmd.go) {
-            setTimeout(() => { closeMic(); cmd.go(); }, 1800);
-          } else {
-            setTimeout(closeMic, 3000);
-          }
-          return;
+        case 'date-voice': {
+          const r=`Today is ${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}.`;
+          speak(r); document.getElementById('micWords').textContent=r;
+          setTimeout(closeMic,3500); return;
+        }
+        case 'hello-voice': {
+          const r=`Hello! I'm ${cfg.name}. How can I help you?`;
+          speak(r); document.getElementById('micWords').textContent=r;
+          setTimeout(closeMic,3000); return;
+        }
+        case 'name-voice': {
+          const r=`I am ${cfg.name}, your personal assistant.`;
+          speak(r); document.getElementById('micWords').textContent=r;
+          setTimeout(closeMic,3000); return;
         }
       }
-      speak('Searching for ' + text);
-      setTimeout(() => {
-        window.open('https://www.google.com/search?q=' + encodeURIComponent(text), '_blank');
-        closeMic();
-      }, 1400);
     }
-  </script>
+  }
+  // fallback
+  speak(`You said: ${text}. Try asking about restaurants, sports, tickets, or search.`);
+  document.getElementById('micWords').textContent=text;
+  setTimeout(closeMic,4000);
+}
+
+/* ════════════════════════════════════════
+   SETTINGS
+════════════════════════════════════════ */
+function toggleSetting(id){
+  const el=document.getElementById(id);
+  el.classList.toggle('on');
+}
+
+document.getElementById('set-speed').addEventListener('input',function(){
+  document.getElementById('set-speed-val').textContent=this.value;
+});
+document.getElementById('set-pitch').addEventListener('input',function(){
+  document.getElementById('set-pitch-val').textContent=this.value;
+});
+
+function applyColors(){
+  const r=document.documentElement.style;
+  r.setProperty('--c-clock',     cfg.colors.clock);
+  r.setProperty('--c-restaurant',cfg.colors.restaurant);
+  r.setProperty('--c-search',    cfg.colors.search);
+  r.setProperty('--c-sports',    cfg.colors.sports);
+  r.setProperty('--c-tickets',   cfg.colors.tickets);
+}
+
+function applyLabels(){
+  document.getElementById('lbl-restaurant').innerHTML=cfg.labels.restaurant.replace('\n','<br>');
+  document.getElementById('lbl-search').textContent=cfg.labels.search;
+  document.getElementById('lbl-tickets').textContent=cfg.labels.tickets;
+}
+
+function saveSettings(){
+  cfg.name    = document.getElementById('set-name').value||'BlackBerry Assistant Pro';
+  cfg.speed   = parseFloat(document.getElementById('set-speed').value);
+  cfg.pitch   = parseFloat(document.getElementById('set-pitch').value);
+  cfg.city    = document.getElementById('set-city').value||'New York';
+  cfg.team    = document.getElementById('set-team').value||'';
+  cfg.speakResults  = document.getElementById('tog-speak').classList.contains('on');
+  cfg.showWeather   = document.getElementById('tog-weather').classList.contains('on');
+  cfg.animateWave   = document.getElementById('tog-wave').classList.contains('on');
+  cfg.colors.clock      = document.getElementById('col-clock').value;
+  cfg.colors.restaurant = document.getElementById('col-restaurant').value;
+  cfg.colors.search     = document.getElementById('col-search').value;
+  cfg.colors.sports     = document.getElementById('col-sports').value;
+  cfg.colors.tickets    = document.getElementById('col-tickets').value;
+  cfg.labels.restaurant = document.getElementById('lbl-set-restaurant').value;
+  cfg.labels.search     = document.getElementById('lbl-set-search').value;
+  cfg.labels.tickets    = document.getElementById('lbl-set-tickets').value;
+
+  try{ localStorage.setItem('bbcfg',JSON.stringify(cfg)); }catch(e){}
+  applyColors(); applyLabels();
+  speak(`Settings saved. Hello, I am ${cfg.name}.`);
+  setTimeout(()=>showScreen('grid-screen'),1200);
+}
+
+/* apply on load */
+applyColors(); applyLabels();
+
+/* populate settings UI from saved cfg */
+document.getElementById('set-name').value=cfg.name;
+document.getElementById('set-speed').value=cfg.speed;
+document.getElementById('set-speed-val').textContent=cfg.speed;
+document.getElementById('set-pitch').value=cfg.pitch;
+document.getElementById('set-pitch-val').textContent=cfg.pitch;
+document.getElementById('set-city').value=cfg.city;
+document.getElementById('set-team').value=cfg.team;
+document.getElementById('col-clock').value=cfg.colors.clock;
+document.getElementById('col-restaurant').value=cfg.colors.restaurant;
+document.getElementById('col-search').value=cfg.colors.search;
+document.getElementById('col-sports').value=cfg.colors.sports;
+document.getElementById('col-tickets').value=cfg.colors.tickets;
+document.getElementById('lbl-set-restaurant').value=cfg.labels.restaurant;
+document.getElementById('lbl-set-search').value=cfg.labels.search;
+document.getElementById('lbl-set-tickets').value=cfg.labels.tickets;
+if(!cfg.speakResults) document.getElementById('tog-speak').classList.remove('on');
+if(!cfg.showWeather)  document.getElementById('tog-weather').classList.remove('on');
+if(!cfg.animateWave)  document.getElementById('tog-wave').classList.remove('on');
+</script>
 </body>
 </html>
