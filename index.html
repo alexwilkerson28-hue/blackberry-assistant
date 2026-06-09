@@ -1,237 +1,766 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlackBerry Assistant Pro</title>
-    <style>
-        * { box-sizing: border-box; }
-        
-        body {
-            /* BlackBerry 10 style dark geometric background gradient */
-            background: radial-gradient(circle at center, #111b24 0%, #000000 100%);
-            color: #ffffff;
-            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            height: 100vh;
-            margin: 0;
-            padding: 15px;
-            overflow: hidden;
-            user-select: none;
-        }
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BlackBerry Assistant Pro</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* --- SCREEN 1: THE HOME GRID MAIN VIEW --- */
-        #grid-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 500px;
-            height: 100%;
-        }
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 4px;
-            width: 100%;
-            height: 240px;
-            margin-top: 10px;
-        }
+    /* ═══════════════════════════════════
+       SCREEN SYSTEM — only one visible
+    ═══════════════════════════════════ */
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s ease;
+    }
+    .screen.hidden { opacity: 0; pointer-events: none; }
 
-        .tile {
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            color: white;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            transition: transform 0.1s;
-        }
-        .tile:active { transform: scale(0.98); }
-        .tile svg { width: 35px; height: 35px; fill: white; }
-        
-        .tile-alarm { background-color: #618A3D; grid-row: span 2; align-items: center; justify-content: center; }
-        .tile-alarm svg { width: 80px; height: 80px; }
-        .tile-location { background-color: #618A3D; }
-        .tile-search { background-color: #0082C8; }
-        .tile-sports { background-color: #A62B2B; }
-        .tile-tickets { background-color: #A62B2B; }
+    /* ═══════════════════════════════════
+       GRID SCREEN
+    ═══════════════════════════════════ */
+    #grid-screen {
+      background: radial-gradient(ellipse at 50% 40%, #0d0d18 0%, #000 70%);
+    }
 
-        .input-container {
-            width: 100%;
-            margin-top: 25px;
-            border-bottom: 1px solid #555555;
-            padding-bottom: 5px;
-        }
-        #text-output {
-            width: 100%;
-            background: transparent;
-            border: none;
-            color: #ffffff;
-            font-size: 22px;
-            font-style: italic;
-            outline: none;
-            text-align: center;
-        }
+    .tile-grid {
+      display: grid;
+      /* Match original: wide clock tile + two narrow columns */
+      grid-template-columns: 200px 160px 160px;
+      grid-template-rows: 130px 130px;
+      gap: 3px;
+    }
 
-        .mic-container {
-            margin-top: auto;
-            margin-bottom: 40px;
-            height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .mic-circle {
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            border: 3px solid #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .mic-circle svg { width: 40px; height: 40px; fill: #ffffff; }
+    .tile {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 12px 14px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      transition: filter 0.12s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .tile:hover  { filter: brightness(1.18); }
+    .tile:active { transform: scale(0.97); filter: brightness(1.3); }
 
-        /* --- SCREEN 2: THE DETAILED RESULT SCREEN (YOUR IMAGE) --- */
-        #result-screen {
-            display: none; /* Initially hidden */
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            max-width: 500px;
-            height: 100%;
-            position: relative;
-        }
+    /* Exact colours from screenshot */
+    .t-clock      { background: #6a8c3f; grid-row: span 2; align-items: center; justify-content: center; }
+    .t-restaurant { background: #738f3e; }
+    .t-search     { background: #1877c8; }
+    .t-sports     { background: #8c2222; }
+    .t-tickets    { background: #952626; }
 
-        .sub-header {
-            font-size: 15px;
-            color: #888888;
-            font-style: italic;
-            margin-bottom: 5px;
-        }
+    /* ── Clock tile ── */
+    .clock-inner {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      pointer-events: none;
+    }
+    .clock-svg { width: 64px; height: 64px; }
+    .clock-digital {
+      font-size: 14px; font-weight: 300; letter-spacing: 2px;
+      color: rgba(255,255,255,0.9);
+    }
+    .clock-dow {
+      font-size: 11px; font-weight: 400; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(255,255,255,0.65);
+      margin-top: -4px;
+    }
 
-        .request-text {
-            font-size: 26px;
-            color: #ffffff;
-            font-weight: 300;
-            margin-bottom: 40px;
-            text-align: center;
-        }
+    /* ── Small tile icons & labels ── */
+    .tile-top {
+      position: absolute; top: 12px; left: 14px;
+    }
+    .tile-icon-svg { width: 28px; height: 28px; }
+    .tile-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: rgba(255,255,255,0.85);
+    }
+    .tile-label {
+      font-size: 13px; font-weight: 400; line-height: 1.25;
+      color: #fff;
+    }
 
-        /* Large circular action icons matching the screenshot style */
-        .action-circle {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        .action-circle svg {
-            width: 75px;
-            height: 75px;
-            fill: #ffffff;
-        }
+    /* Sports tile — daily label */
+    .sport-day   { font-size: 9px; opacity: .6; text-transform: uppercase; letter-spacing: .5px; }
+    .sport-name  { font-size: 13px; font-weight: 600; line-height: 1.2; }
+    .sport-league{ font-size: 10px; opacity: .65; }
 
-        /* Back navigation arrow button at the bottom left */
-        .back-button {
-            position: absolute;
-            bottom: 20px;
-            left: 10px;
-            width: 60px;
-            height: 60px;
-            background-color: #1a1a1a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .back-button:active { background-color: #333333; }
-        .back-button svg { width: 25px; height: 25px; fill: white; }
-    </style>
+    /* ── Search bar ── */
+    .search-row {
+      margin-top: 22px;
+      width: 523px; /* matches tile grid width */
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding-bottom: 6px;
+      display: flex; align-items: center; gap: 0;
+      position: relative;
+    }
+    .search-row input {
+      flex: 1; background: transparent; border: none; outline: none;
+      font-family: inherit; font-size: 16px; font-style: italic;
+      font-weight: 300; color: rgba(255,255,255,.55);
+      caret-color: #1877c8;
+    }
+    .search-row input::placeholder { color: rgba(255,255,255,.0); }
+    .search-row input:focus { color: rgba(255,255,255,.85); font-style: normal; }
+    /* "Type here to get started" fake placeholder matching original exactly */
+    .search-placeholder {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      display: flex; align-items: center;
+      pointer-events: none;
+      font-size: 16px; font-style: italic; font-weight: 300;
+      color: rgba(255,255,255,.55);
+      white-space: nowrap;
+    }
+    .search-placeholder span {
+      background: #1877c8;
+      color: #fff;
+      padding: 1px 3px;
+      font-style: italic;
+    }
+    .search-go {
+      background: none; border: none; color: rgba(255,255,255,.4);
+      cursor: pointer; font-size: 18px; padding: 0 4px;
+      transition: color .15s;
+    }
+    .search-go:hover { color: #fff; }
+
+    /* ── Mic button ── matches original circle exactly ── */
+    .mic-wrap {
+      margin-top: 60px;
+    }
+    .mic-btn {
+      width: 72px; height: 72px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.7);
+      background: transparent;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .2s, background .2s, transform .1s;
+    }
+    .mic-btn:hover  { border-color: #fff; background: rgba(255,255,255,.06); }
+    .mic-btn:active { transform: scale(.95); }
+    .mic-icon-svg { width: 26px; height: 26px; fill: rgba(255,255,255,0.85); }
+
+    /* ═══════════════════════════════════
+       RESULT SCREEN  (tile click)
+    ═══════════════════════════════════ */
+    #result-screen {
+      background: radial-gradient(ellipse at 50% 40%, #0d0d18 0%, #000 70%);
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .result-header {
+      display: flex; align-items: center; gap: 16px;
+      width: 100%; max-width: 600px;
+      padding: 0 32px 32px;
+    }
+    .result-icon-circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .result-title { font-size: 20px; font-weight: 300; color: rgba(255,255,255,.9); }
+
+    .result-body {
+      width: 100%; max-width: 600px;
+      padding: 0 32px;
+      font-size: 14px; color: rgba(255,255,255,.6);
+      line-height: 1.7;
+    }
+
+    .result-input-row {
+      margin-top: 24px;
+      width: 100%; max-width: 600px;
+      padding: 0 32px;
+      border-bottom: 1px solid rgba(255,255,255,.2);
+      padding-bottom: 6px;
+      font-size: 14px; color: rgba(255,255,255,.45);
+      font-style: italic;
+    }
+
+    .result-open-btn {
+      margin-top: 32px;
+      padding: 10px 28px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.35);
+      color: rgba(255,255,255,.8);
+      font-size: 14px; font-family: inherit;
+      cursor: pointer; letter-spacing: .5px;
+      transition: background .2s, border-color .2s;
+    }
+    .result-open-btn:hover { background: rgba(255,255,255,.08); border-color: #fff; }
+
+    .back-btn {
+      position: absolute; bottom: 28px; left: 28px;
+      width: 44px; height: 44px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.2);
+      color: rgba(255,255,255,.7);
+      font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .back-btn:hover { background: rgba(255,255,255,.14); }
+
+    /* ═══════════════════════════════════
+       MIC OVERLAY  — BlackBerry style
+    ═══════════════════════════════════ */
+    #mic-screen {
+      background: #07080f;
+      z-index: 100;
+    }
+
+    /* Geometric faceted background */
+    .geo { position: absolute; inset: 0; overflow: hidden; }
+    .geo::before {
+      content: '';
+      position: absolute;
+      width: 0; height: 0;
+      border-left: 120vw solid transparent;
+      border-top: 75vh solid #0c1526;
+      top: 0; left: -10vw;
+    }
+    .geo::after {
+      content: '';
+      position: absolute;
+      width: 0; height: 0;
+      border-right: 55vw solid transparent;
+      border-top: 60vh solid #16092a;
+      top: 0; right: 0;
+      opacity: .75;
+    }
+    .geo .ga {
+      position: absolute;
+      width: 0; height: 0;
+      border-left: 100vw solid transparent;
+      border-bottom: 55vh solid #080e1e;
+      bottom: 0; left: 0;
+    }
+    .geo .gb {
+      position: absolute;
+      width: 0; height: 0;
+      border-left: 60vw solid transparent;
+      border-right: 60vw solid transparent;
+      border-bottom: 50vh solid #0d1a2e;
+      top: 8vh; left: -20vw;
+      opacity: .5;
+    }
+    .geo .gc {
+      position: absolute;
+      width: 0; height: 0;
+      border-right: 45vw solid transparent;
+      border-bottom: 70vh solid #110820;
+      bottom: 0; right: 0;
+      opacity: .6;
+    }
+
+    /* Blue pulsing circle */
+    .mic-orb {
+      position: relative; z-index: 2;
+      width: 130px; height: 130px; border-radius: 50%;
+      background: #1daae0;
+      display: flex; align-items: center; justify-content: center;
+      animation: orbPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes orbPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(29,170,224,.5); }
+      50%      { box-shadow: 0 0 0 24px rgba(29,170,224,0); }
+    }
+
+    /* Animated wave inside orb */
+    .orb-wave { width: 76px; height: 30px; }
+    .wave-line {
+      fill: none; stroke: #fff;
+      stroke-width: 2.8; stroke-linecap: round;
+    }
+
+    .mic-status {
+      position: relative; z-index: 2;
+      margin-top: 28px;
+      font-size: 14px; font-weight: 300;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      color: rgba(255,255,255,.6);
+    }
+    .mic-words {
+      position: relative; z-index: 2;
+      margin-top: 14px;
+      font-size: 18px; font-weight: 300;
+      color: #fff; min-height: 28px;
+      max-width: 80vw; text-align: center;
+    }
+    .mic-close-hint {
+      position: absolute; bottom: 36px; z-index: 3;
+      font-size: 12px; color: rgba(255,255,255,.3);
+      letter-spacing: 1.5px; cursor: pointer;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+    .mic-close-hint:hover { color: rgba(255,255,255,.65); }
+  </style>
 </head>
 <body>
 
-    <!-- SCREEN 1: HOME MAIN INTERFACE -->
-    <div id="grid-screen">
-        <div class="grid-container">
-            <div class="tile tile-alarm" onclick="showTargetResult('Set an alarm', '#618A3D', 'alarm')">
-                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5M7.88,3.34L9.3,4.76L5.05,9L3.64,7.59L7.88,3.34M16.12,3.34L20.36,7.59L18.95,9L14.7,4.76L16.12,3.34Z"/></svg>
-                <div class="tile-label" id="live-time">00:00</div>
-            </div>
-            <div class="tile tile-location" onclick="showTargetResult('Find a restaurant nearby', '#A62B2B', 'restaurant')">
-                <svg viewBox="0 0 24 24"><path d="M11 9H13V6H11M11 11V14H13V11M6 11V13H9V11M15 11V13H18V11M12 2A10 10 0 0 0 2 12A10 10 0 0 0 12 22A10 10 0 0 0 22 12A10 10 0 0 0 12 2Z"/></svg>
-                <div class="tile-label">Find a restaurant</div>
-            </div>
-            <div class="tile tile-search" onclick="showTargetResult('Search the Internet', '#0082C8', 'search')">
-                <svg viewBox="0 0 24 24"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/></svg>
-                <div class="tile-label">Search Internet</div>
-            </div>
-            <div class="tile tile-sports" onclick="showTargetResult('Check sports schedules', '#A62B2B', 'sports')">
-                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4C13.43,4 14.8,4.45 15.96,5.22L14.54,6.64C13.77,6.23 12.9,6 12,6A6,6 0 0,0 6,12C6,12.9 6.23,13.77 6.64,14.54L5.22,15.96C4.45,14.8 4,13.43 4,12A8,8 0 0,1 12,4M18.78,8.04C19.55,9.2 20,10.57 20,12A8,8 0 0,1 12,20C10.57,20 9.2,19.55 8.04,18.78L9.46,17.36C10.23,17.77 11.1,18 12,18A6,6 0 0,0 18,12C18,11.1 17.77,10.23 17.36,9.46L18.78,8.04Z"/></svg>
-                <div class="tile-label">Check sports</div>
-            </div>
-            <div class="tile tile-tickets" onclick="showTargetResult('Check current tickets', '#A62B2B', 'tickets')">
-                <svg viewBox="0 0 24 24"><path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3H18V1M17,11H12V16H17V11Z"/></svg>
-                <div class="tile-label">Check tickets</div>
-            </div>
-        </div>
+  <!-- ══════════════════════════════════
+       SCREEN 1 — GRID (main screen)
+  ══════════════════════════════════ -->
+  <div class="screen" id="grid-screen">
 
-        <div class="input-container">
-            <input type="text" id="text-output" value="Type here to get started" readonly>
-        </div>
+    <div class="tile-grid">
 
-        <div class="mic-container">
-            <div class="mic-circle" onclick="startVoiceAPI()">
-                <svg viewBox="0 0 24 24"><path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/></svg>
-            </div>
+      <!-- CLOCK — tall tile -->
+      <div class="tile t-clock" onclick="openLink('https://www.timeanddate.com/calendar/')">
+        <div class="clock-inner">
+          <svg class="clock-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <!-- ring -->
+            <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2.5"/>
+            <!-- hour hand -->
+            <line id="hh" x1="32" y1="32" x2="32" y2="16" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- minute hand -->
+            <line id="hm" x1="32" y1="32" x2="32" y2="10" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round"/>
+            <!-- center dot -->
+            <circle cx="32" cy="32" r="2.5" fill="#fff"/>
+          </svg>
+          <div class="clock-digital" id="clockTime">00:00</div>
+          <div class="clock-dow"    id="clockDow">Monday</div>
         </div>
+      </div>
+
+      <!-- FIND A RESTAURANT -->
+      <div class="tile t-restaurant" onclick="goTo('restaurant')">
+        <div class="tile-top">
+          <div class="tile-dot"></div>
+        </div>
+        <div class="tile-label">Find a<br>restaurant</div>
+      </div>
+
+      <!-- SEARCH INTERNET -->
+      <div class="tile t-search" onclick="goTo('search')">
+        <div class="tile-top">
+          <svg class="tile-icon-svg" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="8" stroke="rgba(255,255,255,0.9)" stroke-width="2.2"/>
+            <line x1="18" y1="18" x2="25" y2="25" stroke="rgba(255,255,255,0.9)" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="tile-label">Search Internet</div>
+      </div>
+
+      <!-- CHECK SPORTS — daily rotating -->
+      <div class="tile t-sports" id="sports-tile" onclick="goTo('sports')">
+        <div class="tile-top">
+          <svg class="tile-icon-svg" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="14" cy="14" r="10" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+            <line x1="14" y1="4" x2="14" y2="24" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/>
+            <path d="M4 14 Q14 8 24 14 Q14 20 4 14Z" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" fill="none"/>
+          </svg>
+        </div>
+        <div class="sport-day"    id="sport-day">Today</div>
+        <div class="sport-name"   id="sport-name">Check sports</div>
+        <div class="sport-league" id="sport-league"></div>
+      </div>
+
+      <!-- CHECK TICKETS -->
+      <div class="tile t-tickets" onclick="goTo('tickets')">
+        <div class="tile-top">
+          <svg class="tile-icon-svg" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="7" width="22" height="15" rx="2" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+            <line x1="3" y1="12" x2="25" y2="12" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/>
+            <line x1="9" y1="7" x2="9" y2="5" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="19" y1="7" x2="19" y2="5" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="tile-label">Check tickets</div>
+      </div>
+
+    </div><!-- /tile-grid -->
+
+    <!-- SEARCH BAR -->
+    <div class="search-row">
+      <div class="search-placeholder" id="searchPlaceholder">
+        Type here to get <span>started</span>
+      </div>
+      <input type="text" id="searchInput"
+        oninput="onSearchInput(this.value)"
+        onkeydown="if(event.key==='Enter') doSearch()" />
+      <button class="search-go" onclick="doSearch()">&#8250;</button>
     </div>
 
-    <!-- SCREEN 2: DETAILED ACTION VIEW (MATCHES SCREENSHOT) -->
-    <div id="result-screen">
-        <div class="sub-header">Tap your request to edit it</div>
-        <div class="request-text" id="target-text">Find a restaurant nearby</div>
-        
-        <!-- Large Colored Interactive Icon -->
-        <div class="action-circle" id="target-circle">
-            <!-- Dynamic SVGs render here via Javascript -->
-            <div id="icon-graphic"></div>
-        </div>
-
-        <!-- Back arrow box from image -->
-        <div class="back-button" onclick="showHomeGrid()">
-            <svg viewBox="0 0 24 24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"/></svg>
-        </div>
+    <!-- MIC BUTTON -->
+    <div class="mic-wrap">
+      <button class="mic-btn" onclick="openMic()" aria-label="Voice input">
+        <svg class="mic-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-6 9a6 6 0 0 0 12 0h2a8 8 0 0 1-7 7.93V21h-2v-3.07A8 8 0 0 1 4 10h2z"/>
+        </svg>
+      </button>
     </div>
 
-    <script>
-        const gridScreen = document.getElementById('grid-screen');
-        const resultScreen = document.getElementById('result-screen');
-        const targetText = document.getElementById('target-text');
-        const targetCircle = document.getElementById('target-circle');
-        const iconGraphic = document.getElementById('icon-graphic');
-        const textOutput = document.getElementById('text-output');
+  </div><!-- /#grid-screen -->
 
-        // Dynamic System Clock
-        function updateClock() {
-            document.getElementById('live-time').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+  <!-- ══════════════════════════════════
+       SCREEN 2 — RESULT
+  ══════════════════════════════════ -->
+  <div class="screen hidden" id="result-screen">
+
+    <div class="result-header">
+      <div class="result-icon-circle" id="result-icon"></div>
+      <div class="result-title" id="result-title">Find a restaurant</div>
+    </div>
+
+    <div class="result-body" id="result-body">
+      Looking for restaurants near you…
+    </div>
+
+    <div class="result-input-row" id="result-input-row">
+      Find a restaurant nearby
+    </div>
+
+    <button class="result-open-btn" id="result-open-btn" onclick="openResult()">
+      Open ›
+    </button>
+
+    <!-- back arrow — matches original screenshot -->
+    <button class="back-btn" onclick="goBack()" aria-label="Back">&#8249;</button>
+
+  </div><!-- /#result-screen -->
+
+
+  <!-- ══════════════════════════════════
+       SCREEN 3 — MIC OVERLAY
+  ══════════════════════════════════ -->
+  <div class="screen hidden" id="mic-screen">
+
+    <div class="geo">
+      <div class="ga"></div>
+      <div class="gb"></div>
+      <div class="gc"></div>
+    </div>
+
+    <div class="mic-orb">
+      <svg class="orb-wave" viewBox="0 0 76 30" xmlns="http://www.w3.org/2000/svg">
+        <path class="wave-line" id="wavePath"
+          d="M4,15 C10,6 16,24 26,15 C36,6 42,24 52,15 C60,6 66,24 72,15"/>
+      </svg>
+    </div>
+
+    <div class="mic-status" id="micStatus">Listening…</div>
+    <div class="mic-words"  id="micWords"></div>
+
+    <div class="mic-close-hint" onclick="closeMic()">✕ &nbsp; tap to close</div>
+
+  </div><!-- /#mic-screen -->
+
+
+  <script>
+    /* ════════════════════════════
+       CLOCK
+    ════════════════════════════ */
+    const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+      const hDeg = (h % 12) * 30 + m * 0.5;
+      const mDeg = m * 6 + s * 0.1;
+
+      // Rotate SVG lines around centre (32,32)
+      const hRad = (hDeg - 90) * Math.PI / 180;
+      const mRad = (mDeg - 90) * Math.PI / 180;
+      const hLen = 16, mLen = 22;
+
+      document.getElementById('hh').setAttribute('x2', 32 + Math.cos(hRad) * hLen);
+      document.getElementById('hh').setAttribute('y2', 32 + Math.sin(hRad) * hLen);
+      document.getElementById('hm').setAttribute('x2', 32 + Math.cos(mRad) * mLen);
+      document.getElementById('hm').setAttribute('y2', 32 + Math.sin(mRad) * mLen);
+
+      document.getElementById('clockTime').textContent =
+        h.toString().padStart(2,'0') + ':' + m.toString().padStart(2,'0');
+      document.getElementById('clockDow').textContent = DAYS[now.getDay()];
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* ════════════════════════════
+       DAILY SPORTS
+    ════════════════════════════ */
+    const SPORTS = [
+      { day:'Sunday',    name:'NFL Scores',         league:'All Games',             url:'https://www.nfl.com/scores/' },
+      { day:'Monday',    name:'Monday Night NFL',   league:'NFL Football',          url:'https://www.nfl.com/scores/' },
+      { day:'Tuesday',   name:'NBA Standings',      league:'NBA Basketball',        url:'https://www.nba.com/standings' },
+      { day:'Wednesday', name:'MLB Scores',          league:'Major League Baseball', url:'https://www.mlb.com/scores' },
+      { day:'Thursday',  name:'Thursday Night NFL', league:'NFL Football',          url:'https://www.nfl.com/scores/' },
+      { day:'Friday',    name:'NBA Games',           league:'NBA Basketball',        url:'https://www.nba.com/games' },
+      { day:'Saturday',  name:'College Football',   league:'NCAA / ESPN',           url:'https://www.espn.com/college-football/scoreboard' },
+    ];
+    const todaySport = SPORTS[new Date().getDay()];
+    document.getElementById('sport-day').textContent    = todaySport.day;
+    document.getElementById('sport-name').textContent   = todaySport.name;
+    document.getElementById('sport-league').textContent = todaySport.league;
+
+    /* ════════════════════════════
+       SCREEN TRANSITIONS
+    ════════════════════════════ */
+    function showScreen(id) {
+      ['grid-screen','result-screen','mic-screen'].forEach(s => {
+        document.getElementById(s).classList.toggle('hidden', s !== id);
+      });
+    }
+
+    function goBack() { showScreen('grid-screen'); }
+
+    /* ════════════════════════════
+       TILE ACTIONS
+    ════════════════════════════ */
+    const TILE_DATA = {
+      restaurant: {
+        color: '#6a8c3f',
+        iconSVG: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="28" fill="#6a8c3f"/><path d="M20 16v24M20 16c0 5 6 8 6 12H14c0-4 6-7 6-12z" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M34 16v8a6 6 0 0 0 6 6v14" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="34" y1="24" x2="40" y2="24" stroke="#fff" stroke-width="2"/></svg>`,
+        title: 'Find a restaurant',
+        body: 'Search for the best restaurants near you on Yelp — ratings, menus, reviews, and directions.',
+        inputHint: 'Find a restaurant nearby',
+        url: 'https://www.yelp.com/search?find_desc=restaurants'
+      },
+      search: {
+        color: '#1877c8',
+        iconSVG: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="28" fill="#1877c8"/><circle cx="24" cy="24" r="9" stroke="#fff" stroke-width="2.5"/><line x1="30" y1="30" x2="40" y2="40" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+        title: 'Search Internet',
+        body: 'Search the web with Google — find anything from news and weather to directions and more.',
+        inputHint: 'Search the internet',
+        url: 'https://www.google.com'
+      },
+      sports: {
+        color: '#8c2222',
+        iconSVG: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="28" fill="#8c2222"/><circle cx="28" cy="28" r="12" stroke="#fff" stroke-width="2"/><line x1="28" y1="16" x2="28" y2="40" stroke="#fff" stroke-width="1.5"/><path d="M16 28 Q28 22 40 28 Q28 34 16 28Z" stroke="#fff" stroke-width="1.5" fill="none"/></svg>`,
+        title: todaySport.name,
+        body: `Today\'s featured sport: ${todaySport.league}. Check live scores, standings, and highlights.`,
+        inputHint: 'Check sports scores',
+        url: todaySport.url
+      },
+      tickets: {
+        color: '#952626',
+        iconSVG: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="28" fill="#952626"/><rect x="12" y="18" width="32" height="20" rx="3" stroke="#fff" stroke-width="2"/><line x1="12" y1="25" x2="44" y2="25" stroke="#fff" stroke-width="1.5"/><line x1="20" y1="18" x2="20" y2="15" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="36" y1="18" x2="36" y2="15" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`,
+        title: 'Check tickets',
+        body: 'Find tickets for concerts, sports events, theatre, and more on Ticketmaster.',
+        inputHint: 'Check event tickets',
+        url: 'https://www.ticketmaster.com'
+      },
+    };
+
+    let currentUrl = '';
+
+    function goTo(key) {
+      const d = TILE_DATA[key];
+      document.getElementById('result-icon').innerHTML = d.iconSVG;
+      document.getElementById('result-title').textContent  = d.title;
+      document.getElementById('result-body').textContent   = d.body;
+      document.getElementById('result-input-row').textContent = d.inputHint;
+      currentUrl = d.url;
+      showScreen('result-screen');
+    }
+
+    function openResult() {
+      if (currentUrl) window.open(currentUrl, '_blank');
+    }
+
+    function openLink(url) { window.open(url, '_blank'); }
+
+    /* ════════════════════════════
+       SEARCH BAR
+    ════════════════════════════ */
+    function onSearchInput(val) {
+      document.getElementById('searchPlaceholder').style.display = val ? 'none' : 'flex';
+    }
+
+    const SEARCH_LINKS = {
+      taco:    'https://www.yelp.com/search?find_desc=tacos',
+      pizza:   'https://www.google.com/search?q=pizza+near+me',
+      restaurant: 'https://www.yelp.com/search?find_desc=restaurants',
+      weather: 'https://weather.com',
+      laker:   'https://www.espn.com/nba/',
+      nba:     'https://www.nba.com/scores',
+      nfl:     'https://www.nfl.com/scores/',
+      sport:   'https://www.espn.com',
+      ticket:  'https://www.ticketmaster.com',
+      concert: 'https://www.ticketmaster.com',
+    };
+
+    function doSearch() {
+      const val = document.getElementById('searchInput').value.trim();
+      if (!val) return;
+      const low = val.toLowerCase();
+      for (const [k, u] of Object.entries(SEARCH_LINKS)) {
+        if (low.includes(k)) { window.open(u, '_blank'); return; }
+      }
+      window.open('https://www.google.com/search?q=' + encodeURIComponent(val), '_blank');
+    }
+
+    /* ════════════════════════════
+       MIC  +  FEMALE VOICE
+    ════════════════════════════ */
+    let femaleVoice  = null;
+    let recognition  = null;
+    let waveTimer    = null;
+
+    function loadVoices() {
+      const voices = window.speechSynthesis.getVoices();
+      const prefer = ['samantha','zira','victoria','karen','moira','tessa','fiona','female'];
+      for (const name of prefer) {
+        const v = voices.find(x => x.name.toLowerCase().includes(name));
+        if (v) { femaleVoice = v; return; }
+      }
+      femaleVoice = voices.find(v =>
+        !/(male|david|james|mark|google uk english male)/i.test(v.name)
+      ) || voices[0] || null;
+    }
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+
+    function speak(text) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.voice = femaleVoice;
+      u.rate  = 0.96;
+      u.pitch = 1.1;
+      window.speechSynthesis.speak(u);
+    }
+
+    /* Animate wave path */
+    let wavePhase = 0;
+    function animateWave() {
+      wavePhase += 0.12;
+      const amp = 9;
+      const pts = [];
+      for (let x = 4; x <= 72; x += 8) {
+        const y = 15 + Math.sin(wavePhase + x * 0.18) * amp;
+        pts.push(`${x},${y.toFixed(1)}`);
+      }
+      // build smooth path
+      const p = `M${pts[0]} ` + pts.slice(1).map((pt,i) => {
+        const prev = pts[i].split(',');
+        const cur  = pt.split(',');
+        const cpx  = (parseFloat(prev[0]) + parseFloat(cur[0])) / 2;
+        return `Q${cpx},${prev[1]} ${cur[0]},${cur[1]}`;
+      }).join(' ');
+      const el = document.getElementById('wavePath');
+      if (el) el.setAttribute('d', p);
+      waveTimer = requestAnimationFrame(animateWave);
+    }
+
+    function openMic() {
+      showScreen('mic-screen');
+      document.getElementById('micStatus').textContent = 'Listening…';
+      document.getElementById('micWords').textContent  = '';
+      speak("Hello! I'm listening. What can I help you with?");
+      animateWave();
+      startSpeech();
+    }
+
+    function closeMic() {
+      showScreen('grid-screen');
+      window.speechSynthesis.cancel();
+      if (recognition) { try { recognition.stop(); } catch(e){} }
+      if (waveTimer)   { cancelAnimationFrame(waveTimer); waveTimer = null; }
+    }
+
+    function startSpeech() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        document.getElementById('micStatus').textContent = 'Voice not supported — use Chrome';
+        speak('Sorry, voice recognition needs Chrome or Edge.');
+        return;
+      }
+      recognition = new SR();
+      recognition.lang = 'en-US';
+      recognition.interimResults = true;
+      recognition.continuous     = false;
+
+      recognition.onresult = e => {
+        let final = '', interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) final += t; else interim += t;
         }
-        setInterval(updateClock, 1000);
-        updateClock();
+        document.getElementById('micWords').textContent = final || interim;
+        if (final) handleVoice(final.toLowerCase().trim());
+      };
 
-        // Vector graphics dictionary mimicking the original BlackBerry icon set
-        const vectors = {
-            restaurant: `<svg viewBox="0 0 24 24"><path d="M11 9H9V2H7V9H5V2H3V9C3 11.12 4.66 12.84 6.75 12.97V22H9.25V12.97C11.34 12.84 13 11.12 13 9V2H11V9M16 6V14H18.5V22H21V2C18.24 2 16 4.24 16 6Z"/></svg>`,
+      recognition.onend = () => {
+        const w = document.getElementById('micWords').textContent;
+        if (!w) {
+          document.getElementById('micStatus').textContent = "Didn't catch that";
+          speak("I didn't catch that. Please try again.");
+        }
+      };
+
+      recognition.onerror = e => {
+        document.getElementById('micStatus').textContent = 'Error: ' + e.error;
+      };
+
+      recognition.start();
+    }
+
+    const VOICE_CMDS = [
+      { keys:['restaurant','food','eat','hungry','pizza','burger','taco','lunch','dinner'],
+        say:'Opening restaurant search for you!',
+        go: () => goTo('restaurant') },
+      { keys:['weather','rain','temperature','forecast','hot','cold'],
+        say:'Let me check the weather for you.',
+        go: () => { window.open('https://weather.com','_blank'); closeMic(); } },
+      { keys:['sport','nba','nfl','score','game','basketball','football','baseball','mlb'],
+        say:'Opening sports scores!',
+        go: () => goTo('sports') },
+      { keys:['ticket','concert','event','show','venue'],
+        say:'Opening Ticketmaster for tickets.',
+        go: () => goTo('tickets') },
+      { keys:['search','google','find','look up','internet'],
+        say:'Opening a search for you.',
+        go: () => goTo('search') },
+      { keys:['time','clock','what time'],
+        say: () => { const n=new Date(); return `It's ${n.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}.`; },
+        go: null },
+      { keys:['hello','hi ','hey ','howdy'],
+        say:'Hello! How can I help you today?',
+        go: null },
+    ];
+
+    function handleVoice(text) {
+      document.getElementById('micStatus').textContent = 'Got it!';
+      for (const cmd of VOICE_CMDS) {
+        if (cmd.keys.some(k => text.includes(k))) {
+          const reply = typeof cmd.say === 'function' ? cmd.say() : cmd.say;
+          speak(reply);
+          document.getElementById('micWords').textContent = reply;
+          if (cmd.go) {
+            setTimeout(() => { closeMic(); cmd.go(); }, 1800);
+          } else {
+            setTimeout(closeMic, 3000);
+          }
+          return;
+        }
+      }
+      speak('Searching for ' + text);
+      setTimeout(() => {
+        window.open('https://www.google.com/search?q=' + encodeURIComponent(text), '_blank');
+        closeMic();
+      }, 1400);
+    }
+  </script>
+</body>
+</html>
