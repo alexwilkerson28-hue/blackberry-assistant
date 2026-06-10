@@ -2,888 +2,832 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>BlackBerry Assistant Pro</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#000"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-title" content="BB Assistant"/>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width:100%; height:100%; background:#000; font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; color:#fff; overflow:hidden; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{width:100%;height:100%;background:#000;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;color:#fff;overflow:hidden;position:fixed;inset:0;-webkit-user-select:none;user-select:none;}
+    .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .25s;}
+    .screen.hidden{opacity:0;pointer-events:none;}
 
-    /* ═══════════════ SCREENS ═══════════════ */
-    .screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity .3s; }
-    .screen.hidden { opacity:0; pointer-events:none; }
+    /* ═══ AUTH SCREENS ═══ */
+    #auth-screen{background:radial-gradient(ellipse at 50% 30%,#0d0d1c 0%,#000 80%);}
+    .auth-box{width:90%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+    .auth-logo{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:8px;}
+    .auth-logo svg{width:56px;height:56px;}
+    .auth-logo-text{font-size:20px;font-weight:300;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.85);}
+    .auth-logo-sub{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);}
+    .auth-tabs{display:flex;width:100%;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:4px;}
+    .auth-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;color:rgba(255,255,255,.35);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.5px;transition:color .2s,border-color .2s;}
+    .auth-tab.active{color:#1db8e8;border-bottom-color:#1db8e8;}
+    .auth-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:6px;padding:13px 16px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;}
+    .auth-input:focus{border-color:#1db8e8;}
+    .auth-input::placeholder{color:rgba(255,255,255,.25);}
+    .auth-btn{width:100%;padding:14px;background:#1db8e8;border:none;color:#000;font-size:15px;font-family:inherit;font-weight:700;border-radius:6px;cursor:pointer;letter-spacing:.5px;transition:background .2s;}
+    .auth-btn:active{background:#1a9fcc;}
+    .auth-error{font-size:12px;color:#ff6b6b;text-align:center;min-height:16px;}
+    .auth-divider{width:100%;text-align:center;font-size:11px;color:rgba(255,255,255,.2);letter-spacing:1px;}
+    .auth-free-badge{background:rgba(29,184,232,.15);border:1px solid rgba(29,184,232,.3);border-radius:20px;padding:6px 16px;font-size:11px;color:#1db8e8;letter-spacing:1px;}
 
-    /* ═══════════════ GRID SCREEN ═══════════════ */
-    #grid-screen { background:radial-gradient(ellipse at 50% 38%, #0d0d1c 0%, #000 72%); }
+    /* ═══ MAIN SCREEN ═══ */
+    #grid-screen{background:radial-gradient(ellipse at 50% 30%,#0d0d14 0%,#000 75%);}
 
-    .tile-grid {
+    /* greeting bar */
+    .greeting-bar{
+      width:100%;max-width:700px;
+      padding:10px 16px 6px;
+      display:flex;align-items:center;justify-content:space-between;
+      flex-shrink:0;
+    }
+    .greeting-left{display:flex;align-items:center;gap:10px;}
+    .bb-logo svg{width:28px;height:28px;}
+    .greeting-text{font-size:clamp(13px,3vw,16px);font-weight:300;color:rgba(255,255,255,.85);}
+    .greeting-name{color:#1db8e8;font-weight:600;}
+    .settings-btn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:20px;transition:color .2s,transform .3s;padding:4px;}
+    .settings-btn:hover{color:#fff;transform:rotate(45deg);}
+
+    /* tile grid */
+    .tile-grid{
       display:grid;
-      grid-template-columns:200px 160px 160px;
-      grid-template-rows:130px 130px;
-      gap:3px;
+      grid-template-columns:52vw 24vw 24vw;
+      grid-template-rows:28vw 28vw;
+      gap:2px;width:100vw;max-width:700px;
     }
-    .tile {
-      display:flex; flex-direction:column; justify-content:flex-end;
-      padding:12px 14px; cursor:pointer; color:#fff; position:relative;
-      overflow:hidden; transition:filter .12s, transform .1s;
-      -webkit-tap-highlight-color:transparent; user-select:none;
-    }
-    .tile:hover  { filter:brightness(1.18); }
-    .tile:active { transform:scale(.97); filter:brightness(1.3); }
-
-    .t-clock      { grid-row:span 2; align-items:center; justify-content:center; }
-    .t-restaurant { }
-    .t-search     { }
-    .t-sports     { }
-    .t-tickets    { }
-
-    /* tile colour vars — overridden by settings */
-    :root {
-      --c-clock:      #6a8c3f;
-      --c-restaurant: #738f3e;
-      --c-search:     #1877c8;
-      --c-sports:     #8c2222;
-      --c-tickets:    #952626;
-      --assistant-name: "BlackBerry Assistant";
-    }
-    .t-clock      { background: var(--c-clock); }
-    .t-restaurant { background: var(--c-restaurant); }
-    .t-search     { background: var(--c-search); }
-    .t-sports     { background: var(--c-sports); }
-    .t-tickets    { background: var(--c-tickets); }
-
-    /* clock */
-    .clock-inner { display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
-    .clock-digital { font-size:14px; font-weight:300; letter-spacing:2px; color:rgba(255,255,255,.9); }
-    .clock-dow     { font-size:11px; font-weight:400; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,.65); margin-top:-4px; }
-
-    /* small tile */
-    .tile-top  { position:absolute; top:12px; left:14px; }
-    .tile-dot  { width:18px; height:18px; border-radius:50%; background:rgba(255,255,255,.85); }
-    .tile-label{ font-size:13px; font-weight:400; line-height:1.25; }
-    .sport-day   { font-size:9px; opacity:.6; text-transform:uppercase; letter-spacing:.5px; }
-    .sport-name  { font-size:13px; font-weight:600; line-height:1.2; }
-    .sport-league{ font-size:10px; opacity:.65; }
+    .tile{display:flex;flex-direction:column;justify-content:flex-end;padding:10px 12px;cursor:pointer;color:#fff;position:relative;overflow:hidden;transition:filter .12s,transform .1s;-webkit-tap-highlight-color:transparent;}
+    .tile:active{transform:scale(.97);filter:brightness(1.3);}
+    .tile-icon-area{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);}
+    .tile-icon-area svg{width:min(52px,10vw);height:min(52px,10vw);}
+    .tile-label{font-size:clamp(11px,2.5vw,14px);font-weight:400;line-height:1.25;z-index:1;}
+    .t-alarm{grid-row:span 2;}
+    .t-alarm .tile-icon-area{top:38%;}
+    .t-alarm .tile-label{font-size:clamp(13px,3vw,16px);}
+    .sport-day{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.5px;}
+    .sport-name{font-size:clamp(11px,2.5vw,13px);font-weight:600;line-height:1.2;}
+    .sport-league{font-size:10px;opacity:.65;}
 
     /* search bar */
-    .search-row {
-      margin-top:22px; width:523px;
-      border-bottom:1px solid rgba(255,255,255,.2);
-      padding-bottom:6px; display:flex; align-items:center; position:relative;
-    }
-    .search-row input {
-      flex:1; background:transparent; border:none; outline:none;
-      font-family:inherit; font-size:16px; font-style:italic; font-weight:300;
-      color:rgba(255,255,255,.55); caret-color:#1877c8;
-    }
-    .search-row input::placeholder { color:transparent; }
-    .search-row input:focus { color:rgba(255,255,255,.85); font-style:normal; }
-    .search-ph {
-      position:absolute; left:0; top:0; bottom:0; display:flex; align-items:center;
-      pointer-events:none; font-size:16px; font-style:italic; font-weight:300;
-      color:rgba(255,255,255,.55); white-space:nowrap;
-    }
-    .search-ph span { background:#1877c8; color:#fff; padding:1px 3px; font-style:italic; }
-    .search-go { background:none; border:none; color:rgba(255,255,255,.4); cursor:pointer; font-size:18px; padding:0 4px; transition:color .15s; }
-    .search-go:hover { color:#fff; }
+    .search-row{width:100vw;max-width:700px;background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.15);padding:11px 14px;display:flex;align-items:center;gap:8px;position:relative;flex-shrink:0;}
+    .search-ph{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:clamp(14px,3.5vw,17px);font-style:italic;font-weight:300;color:rgba(255,255,255,.35);white-space:nowrap;pointer-events:none;}
+    .search-row input{flex:1;background:transparent;border:none;outline:none;font-family:inherit;font-size:clamp(14px,3.5vw,17px);font-style:italic;font-weight:300;color:rgba(255,255,255,.85);caret-color:#1db8e8;}
+    .search-row input::placeholder{color:transparent;}
+    .search-row input:focus{font-style:normal;}
+    .search-go{background:#1db8e8;border:none;color:#000;cursor:pointer;font-size:16px;font-weight:700;padding:6px 12px;border-radius:4px;transition:background .15s;}
+    .search-go:active{background:#1a9fcc;}
 
-    /* mic button */
-    .mic-wrap { margin-top:60px; }
-    .mic-btn {
-      width:72px; height:72px; border-radius:50%;
-      border:2px solid rgba(255,255,255,.7); background:transparent;
-      cursor:pointer; display:flex; align-items:center; justify-content:center;
-      transition:border-color .2s, background .2s, transform .1s;
-    }
-    .mic-btn:hover  { border-color:#fff; background:rgba(255,255,255,.06); }
-    .mic-btn:active { transform:scale(.95); }
-    .mic-icon-svg { width:26px; height:26px; fill:rgba(255,255,255,.85); }
+    /* mic */
+    .mic-wrap{margin-top:clamp(30px,6vw,60px);}
+    .mic-btn{width:clamp(60px,13vw,72px);height:clamp(60px,13vw,72px);border-radius:50%;border:2px solid rgba(255,255,255,.6);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,background .15s;}
+    .mic-btn:active{transform:scale(.95);}
+    .mic-btn svg{width:clamp(22px,5vw,26px);height:clamp(22px,5vw,26px);fill:rgba(255,255,255,.85);}
+    .info-btn{position:absolute;bottom:14px;right:14px;width:34px;height:34px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:16px;font-style:italic;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 
-    /* settings gear button */
-    .settings-btn {
-      position:absolute; top:18px; right:22px;
-      background:none; border:none; cursor:pointer;
-      color:rgba(255,255,255,.45); font-size:22px;
-      transition:color .2s, transform .3s;
-    }
-    .settings-btn:hover { color:#fff; transform:rotate(45deg); }
+    /* ═══ RESULT SCREEN ═══ */
+    #result-screen{background:radial-gradient(ellipse at 50% 30%,#0d0d1c 0%,#000 72%);justify-content:flex-start;padding:0;overflow:hidden;}
+    .result-topbar{width:100%;flex-shrink:0;background:rgba(0,0,0,.75);border-bottom:1px solid rgba(255,255,255,.1);padding:10px 14px;display:flex;align-items:center;gap:10px;}
+    .back-btn{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:28px;font-weight:200;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:background .15s;}
+    .back-btn:active{background:rgba(255,255,255,.25);}
+    .topbar-icon{width:36px;height:36px;border-radius:50%;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .result-title{font-size:clamp(14px,3.5vw,19px);font-weight:300;color:rgba(255,255,255,.9);flex:1;}
+    .result-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:14px 4% 40px;}
+    .result-content{width:100%;max-width:600px;margin:0 auto;background:rgba(255,255,255,.04);border:.5px solid rgba(255,255,255,.1);border-radius:6px;padding:16px 18px;font-size:clamp(12px,3vw,14px);color:rgba(255,255,255,.75);line-height:1.8;}
+    .rc-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:.5px solid rgba(255,255,255,.08);}
+    .rc-item:last-child{border-bottom:none;}
+    .rc-num{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px;}
+    .rc-name{font-size:clamp(13px,3vw,15px);font-weight:500;color:#fff;}
+    .rc-sub{font-size:clamp(11px,2.5vw,13px);color:rgba(255,255,255,.5);margin-top:3px;}
+    .loading{opacity:.5;font-style:italic;animation:blink 1s infinite;}
+    @keyframes blink{0%,100%{opacity:.5}50%{opacity:.15}}
+    .ai-answer{font-size:clamp(13px,3vw,15px);color:rgba(255,255,255,.88);line-height:1.8;white-space:pre-wrap;}
+    .ai-answer strong{color:#1db8e8;}
 
-    /* ═══════════════ RESULT SCREEN ═══════════════ */
-    #result-screen { background:radial-gradient(ellipse at 50% 38%, #0d0d1c 0%, #000 72%); justify-content:flex-start; padding-top:60px; }
+    /* ═══ MIC / AI SCREEN ═══ */
+    #mic-screen{background:#07080f;z-index:100;}
+    .geo{position:absolute;inset:0;overflow:hidden;}
+    .geo::before{content:'';position:absolute;width:0;height:0;border-style:solid;border-width:100vh 105vw 0 0;border-color:#0b1422 transparent transparent transparent;top:0;left:0;}
+    .geo::after{content:'';position:absolute;width:0;height:0;border-style:solid;border-width:0 60vw 55vh 0;border-color:transparent #1a0b2e transparent transparent;top:0;right:0;opacity:.8;}
+    .geo .g1{position:absolute;width:0;height:0;border-style:solid;border-width:0 0 60vh 110vw;border-color:transparent transparent #000 transparent;bottom:0;left:0;}
+    .geo .g2{position:absolute;width:0;height:0;border-style:solid;border-width:45vh 55vw 0 55vw;border-color:#0d1a30 transparent transparent transparent;top:5vh;left:-10vw;opacity:.6;}
+    .geo .g3{position:absolute;width:0;height:0;border-style:solid;border-width:0 0 50vh 50vw;border-color:transparent transparent #150820 transparent;bottom:0;right:0;opacity:.65;}
+    .mic-orb{position:relative;z-index:2;width:clamp(100px,26vw,130px);height:clamp(100px,26vw,130px);border-radius:50%;background:#1db8e8;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 0 rgba(29,184,232,.5);animation:orbPulse 1.6s ease-in-out infinite;cursor:pointer;}
+    @keyframes orbPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,184,232,.45);}50%{box-shadow:0 0 0 18px rgba(29,184,232,0);}}
+    .orb-wave{width:60%;height:auto;}
+    .ai-chat{position:relative;z-index:2;width:90%;max-width:480px;max-height:38vh;overflow-y:auto;margin-top:16px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch;}
+    .ai-msg{padding:10px 14px;border-radius:18px;font-size:clamp(12px,3vw,14px);line-height:1.5;max-width:88%;animation:fadeUp .2s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .ai-msg.assistant{background:#1db8e8;color:#000;align-self:center;border-radius:20px;font-weight:500;text-align:center;}
+    .ai-msg.user{background:rgba(255,255,255,.12);color:#fff;align-self:flex-end;}
+    .ai-msg.thinking{background:rgba(29,184,232,.15);color:rgba(255,255,255,.5);align-self:center;font-style:italic;font-size:12px;}
+    .mic-status{position:relative;z-index:2;margin-top:12px;font-size:11px;font-weight:300;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45);}
+    .mic-close-hint{position:absolute;bottom:24px;z-index:3;font-size:11px;color:rgba(255,255,255,.22);letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;}
 
-    .result-header { display:flex; align-items:center; gap:16px; width:90%; max-width:600px; margin-bottom:24px; }
-    .result-icon-circle { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .result-title { font-size:22px; font-weight:300; color:rgba(255,255,255,.9); }
-
-    .result-content {
-      width:90%; max-width:600px;
-      min-height:200px;
-      background:rgba(255,255,255,.04);
-      border:0.5px solid rgba(255,255,255,.1);
-      border-radius:6px;
-      padding:20px 22px;
-      font-size:14px; color:rgba(255,255,255,.75); line-height:1.8;
-      overflow-y:auto; max-height:55vh;
-    }
-    .result-content .loading { opacity:.5; font-style:italic; animation:blink 1s infinite; }
-    @keyframes blink { 0%,100%{opacity:.5} 50%{opacity:.15} }
-
-    .result-content .rc-item {
-      display:flex; align-items:flex-start; gap:10px;
-      padding:10px 0; border-bottom:0.5px solid rgba(255,255,255,.08);
-    }
-    .result-content .rc-item:last-child { border-bottom:none; }
-    .rc-num  { width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; margin-top:2px; }
-    .rc-text { flex:1; }
-    .rc-name { font-size:14px; font-weight:500; color:#fff; }
-    .rc-sub  { font-size:12px; color:rgba(255,255,255,.5); margin-top:2px; }
-
-    .back-btn {
-      position:absolute; bottom:28px; left:28px;
-      width:44px; height:44px; background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.7);
-      font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center;
-      transition:background .15s;
-    }
-    .back-btn:hover { background:rgba(255,255,255,.14); }
-
-    /* ═══════════════ MIC OVERLAY ═══════════════ */
-    #mic-screen { background:#07080f; z-index:100; }
-    .geo { position:absolute; inset:0; overflow:hidden; }
-    .geo::before { content:''; position:absolute; width:0; height:0; border-left:120vw solid transparent; border-top:75vh solid #0c1526; top:0; left:-10vw; }
-    .geo::after  { content:''; position:absolute; width:0; height:0; border-right:55vw solid transparent; border-top:60vh solid #16092a; top:0; right:0; opacity:.75; }
-    .geo .ga { position:absolute; width:0; height:0; border-left:100vw solid transparent; border-bottom:55vh solid #080e1e; bottom:0; left:0; }
-    .geo .gb { position:absolute; width:0; height:0; border-left:60vw solid transparent; border-right:60vw solid transparent; border-bottom:50vh solid #0d1a2e; top:8vh; left:-20vw; opacity:.5; }
-    .geo .gc { position:absolute; width:0; height:0; border-right:45vw solid transparent; border-bottom:70vh solid #110820; bottom:0; right:0; opacity:.6; }
-
-    .mic-orb { position:relative; z-index:2; width:130px; height:130px; border-radius:50%; background:#1daae0; display:flex; align-items:center; justify-content:center; animation:orbPulse 1.5s ease-in-out infinite; }
-    @keyframes orbPulse { 0%,100%{box-shadow:0 0 0 0 rgba(29,170,224,.5)} 50%{box-shadow:0 0 0 24px rgba(29,170,224,0)} }
-    .orb-wave { width:76px; height:30px; }
-    .wave-line { fill:none; stroke:#fff; stroke-width:2.8; stroke-linecap:round; }
-    .mic-status { position:relative; z-index:2; margin-top:28px; font-size:14px; font-weight:300; letter-spacing:2.5px; text-transform:uppercase; color:rgba(255,255,255,.6); }
-    .mic-words  { position:relative; z-index:2; margin-top:14px; font-size:18px; font-weight:300; color:#fff; min-height:28px; max-width:80vw; text-align:center; }
-    .mic-close-hint { position:absolute; bottom:36px; z-index:3; font-size:12px; color:rgba(255,255,255,.3); letter-spacing:1.5px; cursor:pointer; text-transform:uppercase; transition:color .2s; }
-    .mic-close-hint:hover { color:rgba(255,255,255,.65); }
-
-    /* ═══════════════ SETTINGS SCREEN ═══════════════ */
-    #settings-screen {
-      background:radial-gradient(ellipse at 50% 30%, #0d0d1c 0%, #000 70%);
-      justify-content:flex-start; padding:24px 0 60px; overflow-y:auto; z-index:50;
-    }
-    .settings-header {
-      width:90%; max-width:520px; display:flex; align-items:center; gap:14px;
-      margin-bottom:28px;
-    }
-    .settings-title { font-size:20px; font-weight:300; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,.85); }
-    .settings-close { margin-left:auto; background:none; border:none; color:rgba(255,255,255,.5); font-size:22px; cursor:pointer; transition:color .2s; }
-    .settings-close:hover { color:#fff; }
-
-    .settings-section { width:90%; max-width:520px; margin-bottom:28px; }
-    .settings-section-title { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,.35); margin-bottom:12px; }
-
-    .settings-row {
-      display:flex; align-items:center; gap:12px;
-      padding:12px 14px; margin-bottom:4px;
-      background:rgba(255,255,255,.04); border:0.5px solid rgba(255,255,255,.08);
-      border-radius:6px;
-    }
-    .settings-row label { font-size:13px; color:rgba(255,255,255,.75); flex:1; }
-    .settings-row input[type=text] {
-      background:rgba(255,255,255,.08); border:0.5px solid rgba(255,255,255,.15);
-      color:#fff; border-radius:4px; padding:5px 10px; font-size:13px;
-      font-family:inherit; outline:none; width:180px;
-    }
-    .settings-row input[type=text]:focus { border-color:#1877c8; }
-    .settings-row input[type=color] { width:36px; height:28px; border:none; border-radius:4px; cursor:pointer; padding:0; background:none; }
-
-    .toggle {
-      width:44px; height:24px; border-radius:12px; background:rgba(255,255,255,.15);
-      position:relative; cursor:pointer; transition:background .2s; flex-shrink:0;
-    }
-    .toggle.on { background:#1877c8; }
-    .toggle::after {
-      content:''; position:absolute; width:18px; height:18px; border-radius:50%;
-      background:#fff; top:3px; left:3px; transition:left .2s;
-    }
-    .toggle.on::after { left:23px; }
-
-    .save-btn {
-      width:90%; max-width:520px; padding:13px;
-      background:#1877c8; border:none; color:#fff;
-      font-size:15px; font-family:inherit; font-weight:500;
-      border-radius:6px; cursor:pointer; transition:background .2s;
-      margin-top:8px;
-    }
-    .save-btn:hover { background:#1562a8; }
+    /* ═══ SETTINGS SCREEN ═══ */
+    #settings-screen{background:radial-gradient(ellipse at 50% 30%,#0d0d1c 0%,#000 70%);justify-content:flex-start;padding:0;overflow:hidden;z-index:50;}
+    .settings-topbar{width:100%;flex-shrink:0;background:rgba(0,0,0,.75);border-bottom:1px solid rgba(255,255,255,.1);padding:10px 14px;display:flex;align-items:center;gap:10px;}
+    .settings-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;padding:14px 4% 40px;}
+    .settings-inner{width:100%;max-width:520px;margin:0 auto;}
+    .s-section{margin-bottom:22px;}
+    .s-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.3);margin-bottom:10px;}
+    .s-row{display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:3px;background:rgba(255,255,255,.04);border:.5px solid rgba(255,255,255,.08);border-radius:6px;}
+    .s-row label{font-size:13px;color:rgba(255,255,255,.75);flex:1;}
+    .s-input{background:rgba(255,255,255,.08);border:.5px solid rgba(255,255,255,.15);color:#fff;border-radius:4px;padding:5px 10px;font-size:13px;font-family:inherit;outline:none;width:160px;}
+    .s-input:focus{border-color:#1db8e8;}
+    .s-color{width:34px;height:26px;border:none;border-radius:4px;cursor:pointer;background:none;padding:0;}
+    .toggle{width:44px;height:24px;border-radius:12px;background:rgba(255,255,255,.15);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+    .toggle.on{background:#1db8e8;}
+    .toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s;}
+    .toggle.on::after{left:23px;}
+    .save-btn{width:100%;padding:13px;background:#1db8e8;border:none;color:#000;font-size:15px;font-family:inherit;font-weight:700;border-radius:6px;cursor:pointer;margin-top:6px;}
+    .logout-btn{width:100%;padding:11px;background:transparent;border:1px solid rgba(255,100,100,.4);color:rgba(255,100,100,.8);font-size:14px;font-family:inherit;border-radius:6px;cursor:pointer;margin-top:8px;}
   </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════
-     SCREEN 1 — GRID
-══════════════════════════════════ -->
-<div class="screen" id="grid-screen">
+<!-- ═══════════════ AUTH SCREEN ═══════════════ -->
+<div class="screen" id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="8" fill="#1db8e8"/>
+        <rect x="10" y="8" width="7" height="32" rx="1" fill="#000"/>
+        <path d="M17 8 Q32 8 32 16 Q32 24 17 24 Z" fill="#000"/>
+        <path d="M17 9.5 Q30 9.5 30 16 Q30 22.5 17 22.5 Z" fill="#1db8e8"/>
+        <path d="M17 24 Q34 24 34 32 Q34 40 17 40 Z" fill="#000"/>
+        <path d="M17 25.5 Q32 25.5 32 32 Q32 38.5 17 38.5 Z" fill="#1db8e8"/>
+      </svg>
+      <div class="auth-logo-text">BlackBerry</div>
+      <div class="auth-logo-sub">Assistant Pro</div>
+    </div>
 
-  <!-- settings gear -->
-  <button class="settings-btn" onclick="showScreen('settings-screen')" aria-label="Settings">⚙</button>
+    <div class="auth-free-badge">✦ Free to sign up</div>
 
+    <div class="auth-tabs" id="authTabs">
+      <div class="auth-tab active" onclick="switchTab('signup')">Sign Up</div>
+      <div class="auth-tab" onclick="switchTab('login')">Sign In</div>
+    </div>
+
+    <!-- SIGN UP FORM -->
+    <div id="signup-form" style="width:100%;display:flex;flex-direction:column;gap:12px;">
+      <input class="auth-input" id="su-firstname" type="text" placeholder="First Name" autocomplete="given-name"/>
+      <input class="auth-input" id="su-lastname"  type="text" placeholder="Last Name"  autocomplete="family-name"/>
+      <input class="auth-input" id="su-email"     type="email" placeholder="Email Address" autocomplete="email"/>
+      <input class="auth-input" id="su-password"  type="password" placeholder="Create Password" autocomplete="new-password"/>
+      <input class="auth-input" id="su-city"      type="text" placeholder="Your City (for local info)" autocomplete="address-level2"/>
+      <div class="auth-error" id="su-error"></div>
+      <button class="auth-btn" onclick="doSignUp()">Create Free Account</button>
+      <div class="auth-divider">Your data is stored only on this device</div>
+    </div>
+
+    <!-- SIGN IN FORM -->
+    <div id="login-form" style="width:100%;display:flex;flex-direction:column;gap:12px;display:none;">
+      <input class="auth-input" id="li-email"    type="email"    placeholder="Email Address" autocomplete="email"/>
+      <input class="auth-input" id="li-password" type="password" placeholder="Password"     autocomplete="current-password"/>
+      <div class="auth-error" id="li-error"></div>
+      <button class="auth-btn" onclick="doLogin()">Sign In</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ MAIN / GRID SCREEN ═══════════════ -->
+<div class="screen hidden" id="grid-screen">
+
+  <!-- Greeting bar with BB logo -->
+  <div class="greeting-bar">
+    <div class="greeting-left">
+      <div class="bb-logo">
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="6" fill="#000"/>
+          <rect x="9" y="7" width="7" height="34" rx="1" fill="#fff"/>
+          <path d="M16 7 Q31 7 31 15.5 Q31 24 16 24 Z" fill="#fff"/>
+          <path d="M16 8.5 Q29 8.5 29 15.5 Q29 22.5 16 22.5 Z" fill="#000"/>
+          <path d="M16 24 Q33 24 33 32.5 Q33 41 16 41 Z" fill="#fff"/>
+          <path d="M16 25.5 Q31 25.5 31 32.5 Q31 39.5 16 39.5 Z" fill="#000"/>
+        </svg>
+      </div>
+      <div class="greeting-text" id="greetingText">Good morning</div>
+    </div>
+    <button class="settings-btn" onclick="showScreen('settings-screen')">⚙</button>
+  </div>
+
+  <!-- TILE GRID -->
   <div class="tile-grid">
 
-    <!-- CLOCK -->
-    <div class="tile t-clock" onclick="showResult('clock')">
-      <div class="clock-inner">
-        <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2.5"/>
-          <line id="hh" x1="32" y1="32" x2="32" y2="16" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" stroke-linecap="round"/>
-          <line id="hm" x1="32" y1="32" x2="32" y2="10" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="32" cy="32" r="2.5" fill="#fff"/>
-        </svg>
-        <div class="clock-digital" id="clockTime">00:00</div>
-        <div class="clock-dow"     id="clockDow">Monday</div>
-      </div>
-    </div>
-
-    <!-- RESTAURANT -->
-    <div class="tile t-restaurant" onclick="showResult('restaurant')">
-      <div class="tile-top"><div class="tile-dot"></div></div>
-      <div class="tile-label" id="lbl-restaurant">Find a<br>restaurant</div>
-    </div>
-
-    <!-- SEARCH -->
-    <div class="tile t-search" onclick="showResult('search')">
-      <div class="tile-top">
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="11" cy="11" r="7.5" stroke="rgba(255,255,255,.9)" stroke-width="2.2"/>
-          <line x1="17" y1="17" x2="24" y2="24" stroke="rgba(255,255,255,.9)" stroke-width="2.2" stroke-linecap="round"/>
+    <div class="tile t-alarm" id="tile-alarm" onclick="showResult('alarm')" style="background:#7a9a2a;">
+      <div class="tile-icon-area">
+        <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="28" cy="30" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2.5"/>
+          <polyline points="20,30 25,36 36,24" stroke="rgba(255,255,255,.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 14 Q16 8 22 11" stroke="rgba(255,255,255,.9)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <path d="M34 11 Q40 8 44 14" stroke="rgba(255,255,255,.9)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <line x1="22" y1="50" x2="20" y2="54" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round"/>
+          <line x1="34" y1="50" x2="36" y2="54" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </div>
-      <div class="tile-label" id="lbl-search">Search Internet</div>
+      <div class="tile-label">Set an alarm</div>
     </div>
 
-    <!-- SPORTS -->
-    <div class="tile t-sports" onclick="showResult('sports')">
-      <div class="tile-top">
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="13" cy="13" r="9.5" stroke="rgba(255,255,255,.85)" stroke-width="2"/>
-          <line x1="13" y1="3.5" x2="13" y2="22.5" stroke="rgba(255,255,255,.85)" stroke-width="1.5"/>
-          <path d="M3.5 13 Q13 8 22.5 13 Q13 18 3.5 13Z" stroke="rgba(255,255,255,.85)" stroke-width="1.5" fill="none"/>
+    <div class="tile t-find" id="tile-find" onclick="showResult('location')" style="background:#5a8a2a;">
+      <div class="tile-icon-area" style="top:35%">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="12" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2"/>
+          <ellipse cx="18" cy="18" rx="5" ry="12" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.5"/>
+          <line x1="6" y1="18" x2="30" y2="18" stroke="rgba(255,255,255,.9)" stroke-width="1.5"/>
+          <circle cx="30" cy="30" r="5" fill="rgba(255,255,255,.9)"/>
+          <line x1="30" y1="35" x2="30" y2="40" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </div>
-      <div class="sport-day"    id="sport-day">Today</div>
-      <div class="sport-name"   id="sport-name">Check sports</div>
+      <div class="tile-label">Find my<br>current</div>
+    </div>
+
+    <div class="tile t-search" id="tile-search" onclick="showResult('search')" style="background:#1877c8;">
+      <div class="tile-icon-area" style="top:35%">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="11" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3"/>
+          <line x1="24" y1="24" x2="36" y2="36" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="tile-label">Search the<br>Internet</div>
+    </div>
+
+    <div class="tile t-sports" id="tile-sports" onclick="showResult('sports')" style="background:#c03030;">
+      <div class="tile-icon-area" style="top:28%">
+        <svg viewBox="0 0 40 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="20" cy="19" rx="16" ry="10" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2.2"/>
+          <line x1="20" y1="9" x2="20" y2="29" stroke="rgba(255,255,255,.9)" stroke-width="1.8"/>
+          <path d="M13 14 Q20 17 27 14" stroke="rgba(255,255,255,.9)" stroke-width="1.6" fill="none"/>
+          <path d="M13 24 Q20 21 27 24" stroke="rgba(255,255,255,.9)" stroke-width="1.6" fill="none"/>
+          <line x1="17" y1="17" x2="23" y2="17" stroke="rgba(255,255,255,.9)" stroke-width="1.5"/>
+          <line x1="17" y1="19" x2="23" y2="19" stroke="rgba(255,255,255,.9)" stroke-width="1.5"/>
+          <line x1="17" y1="21" x2="23" y2="21" stroke="rgba(255,255,255,.9)" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="sport-day" id="sport-day">TODAY</div>
+      <div class="sport-name" id="sport-name">Check sports</div>
       <div class="sport-league" id="sport-league"></div>
     </div>
 
-    <!-- TICKETS -->
-    <div class="tile t-tickets" onclick="showResult('tickets')">
-      <div class="tile-top">
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="7" width="22" height="13" rx="2" stroke="rgba(255,255,255,.85)" stroke-width="2"/>
-          <line x1="2" y1="12" x2="24" y2="12" stroke="rgba(255,255,255,.85)" stroke-width="1.5"/>
-          <line x1="8" y1="7" x2="8" y2="4.5" stroke="rgba(255,255,255,.85)" stroke-width="2" stroke-linecap="round"/>
-          <line x1="18" y1="7" x2="18" y2="4.5" stroke="rgba(255,255,255,.85)" stroke-width="2" stroke-linecap="round"/>
+    <div class="tile t-tickets" id="tile-tickets" onclick="showResult('tickets')" style="background:#b02828;">
+      <div class="tile-icon-area" style="top:28%">
+        <svg viewBox="0 0 40 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 8 L38 8 L38 14 Q34 14 34 15 Q34 16 38 16 L38 22 L2 22 L2 16 Q6 16 6 15 Q6 14 2 14 Z" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linejoin="round"/>
+          <line x1="14" y1="8" x2="14" y2="22" stroke="rgba(255,255,255,.9)" stroke-width="1.5" stroke-dasharray="2 2"/>
+          <path d="M25 12 L26.2 15.6 L30 15.6 L27 17.8 L28.2 21.4 L25 19.2 L21.8 21.4 L23 17.8 L20 15.6 L23.8 15.6 Z" fill="rgba(255,255,255,.85)"/>
         </svg>
       </div>
-      <div class="tile-label" id="lbl-tickets">Check tickets</div>
+      <div class="tile-label">Check<br>current</div>
     </div>
 
   </div>
 
-  <!-- search bar -->
+  <!-- Search bar -->
   <div class="search-row">
-    <div class="search-ph" id="searchPh">Type here to get <span>started</span></div>
+    <div class="search-ph" id="searchPh"><em>Type here to get started</em></div>
     <input type="text" id="searchInput" oninput="onSI(this.value)" onkeydown="if(event.key==='Enter')doSearch()"/>
     <button class="search-go" onclick="doSearch()">›</button>
   </div>
 
-  <!-- mic -->
+  <!-- Mic -->
   <div class="mic-wrap">
-    <button class="mic-btn" onclick="openMic()" aria-label="Voice input">
-      <svg class="mic-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-6 9a6 6 0 0 0 12 0h2a8 8 0 0 1-7 7.93V21h-2v-3.07A8 8 0 0 1 4 10h2z"/>
-      </svg>
+    <button class="mic-btn" onclick="openMic()">
+      <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-6 9a6 6 0 0 0 12 0h2a8 8 0 0 1-7 7.93V21h-2v-3.07A8 8 0 0 1 4 10h2z"/></svg>
     </button>
   </div>
-
+  <div class="info-btn">i</div>
 </div>
 
-<!-- ══════════════════════════════════
-     SCREEN 2 — RESULT
-══════════════════════════════════ -->
+
+<!-- ═══════════════ RESULT SCREEN ═══════════════ -->
 <div class="screen hidden" id="result-screen">
-  <div class="result-header">
-    <div class="result-icon-circle" id="r-icon"></div>
+  <div class="result-topbar">
+    <button class="back-btn" onclick="showScreen('grid-screen')">‹</button>
+    <div class="topbar-icon" id="r-icon"></div>
     <div class="result-title" id="r-title">Result</div>
   </div>
-  <div class="result-content" id="r-content"></div>
-  <button class="back-btn" onclick="showScreen('grid-screen')">‹</button>
+  <div class="result-scroll">
+    <div class="result-content" id="r-content"></div>
+  </div>
 </div>
 
-<!-- ══════════════════════════════════
-     SCREEN 3 — MIC
-══════════════════════════════════ -->
+
+<!-- ═══════════════ MIC / AI SCREEN ═══════════════ -->
 <div class="screen hidden" id="mic-screen">
-  <div class="geo"><div class="ga"></div><div class="gb"></div><div class="gc"></div></div>
-  <div class="mic-orb">
-    <svg class="orb-wave" viewBox="0 0 76 30" xmlns="http://www.w3.org/2000/svg">
-      <path class="wave-line" id="wavePath" d="M4,15 C10,6 16,24 26,15 C36,6 42,24 52,15 C60,6 66,24 72,15"/>
+  <div class="geo"><div class="g1"></div><div class="g2"></div><div class="g3"></div></div>
+  <div class="mic-orb" id="micOrb" onclick="startListening()">
+    <svg class="orb-wave" viewBox="0 0 80 32" xmlns="http://www.w3.org/2000/svg">
+      <path id="wavePath" d="M4,16 C10,7 16,25 26,16 C36,7 42,25 52,16 C62,7 68,25 76,16" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
     </svg>
   </div>
-  <div class="mic-status" id="micStatus">Listening…</div>
-  <div class="mic-words"  id="micWords"></div>
-  <div class="mic-close-hint" onclick="closeMic()">✕ &nbsp;tap to close</div>
+  <div class="ai-chat" id="aiChat"></div>
+  <div class="mic-status" id="micStatus">Tap to speak</div>
+  <div class="mic-close-hint" onclick="closeMic()">✕ close</div>
 </div>
 
-<!-- ══════════════════════════════════
-     SCREEN 4 — SETTINGS
-══════════════════════════════════ -->
+
+<!-- ═══════════════ SETTINGS SCREEN ═══════════════ -->
 <div class="screen hidden" id="settings-screen">
-
-  <div class="settings-header">
-    <div class="settings-title">⚙ Settings</div>
-    <button class="settings-close" onclick="showScreen('grid-screen')">✕</button>
+  <div class="settings-topbar">
+    <button class="back-btn" onclick="showScreen('grid-screen')">‹</button>
+    <span style="font-size:16px;font-weight:300;letter-spacing:1px;">⚙ Settings</span>
   </div>
+  <div class="settings-scroll">
+    <div class="settings-inner">
 
-  <!-- Assistant name -->
-  <div class="settings-section">
-    <div class="settings-section-title">Assistant</div>
-    <div class="settings-row">
-      <label>Assistant Name</label>
-      <input type="text" id="set-name" value="BlackBerry Assistant Pro" placeholder="e.g. My Assistant"/>
-    </div>
-    <div class="settings-row">
-      <label>Voice Speed</label>
-      <input type="range" id="set-speed" min="0.5" max="1.5" step="0.1" value="0.97" style="width:140px; accent-color:#1877c8;"/>
-      <span id="set-speed-val" style="font-size:12px; opacity:.6; width:30px;">1.0</span>
-    </div>
-    <div class="settings-row">
-      <label>Voice Pitch</label>
-      <input type="range" id="set-pitch" min="0.5" max="2" step="0.1" value="1.1" style="width:140px; accent-color:#1877c8;"/>
-      <span id="set-pitch-val" style="font-size:12px; opacity:.6; width:30px;">1.1</span>
-    </div>
-  </div>
+      <div class="s-section">
+        <div class="s-title">Your Profile</div>
+        <div class="s-row"><label>First Name</label><input class="s-input" id="s-firstname" type="text"/></div>
+        <div class="s-row"><label>City</label><input class="s-input" id="s-city" type="text"/></div>
+        <div class="s-row"><label>Fav Team</label><input class="s-input" id="s-team" type="text" placeholder="e.g. Cowboys"/></div>
+      </div>
 
-  <!-- Tile colours -->
-  <div class="settings-section">
-    <div class="settings-section-title">Tile Colours</div>
-    <div class="settings-row">
-      <label>Clock tile</label>
-      <input type="color" id="col-clock" value="#6a8c3f"/>
-    </div>
-    <div class="settings-row">
-      <label>Restaurant tile</label>
-      <input type="color" id="col-restaurant" value="#738f3e"/>
-    </div>
-    <div class="settings-row">
-      <label>Search tile</label>
-      <input type="color" id="col-search" value="#1877c8"/>
-    </div>
-    <div class="settings-row">
-      <label>Sports tile</label>
-      <input type="color" id="col-sports" value="#8c2222"/>
-    </div>
-    <div class="settings-row">
-      <label>Tickets tile</label>
-      <input type="color" id="col-tickets" value="#952626"/>
+      <div class="s-section">
+        <div class="s-title">Tile Colours</div>
+        <div class="s-row"><label>Alarm</label><input type="color" class="s-color" id="col-alarm" value="#7a9a2a"/></div>
+        <div class="s-row"><label>Find Location</label><input type="color" class="s-color" id="col-find" value="#5a8a2a"/></div>
+        <div class="s-row"><label>Search</label><input type="color" class="s-color" id="col-search" value="#1877c8"/></div>
+        <div class="s-row"><label>Sports</label><input type="color" class="s-color" id="col-sports" value="#c03030"/></div>
+        <div class="s-row"><label>Tickets</label><input type="color" class="s-color" id="col-tickets" value="#b02828"/></div>
+      </div>
+
+      <div class="s-section">
+        <div class="s-title">Features</div>
+        <div class="s-row"><label>Speak results aloud</label><div class="toggle on" id="tog-speak" onclick="this.classList.toggle('on')"></div></div>
+        <div class="s-row"><label>AI conversations</label><div class="toggle on" id="tog-ai" onclick="this.classList.toggle('on')"></div></div>
+        <div class="s-row"><label>Animate wave</label><div class="toggle on" id="tog-wave" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+
+      <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+
     </div>
   </div>
-
-  <!-- Tile labels -->
-  <div class="settings-section">
-    <div class="settings-section-title">Tile Labels</div>
-    <div class="settings-row">
-      <label>Restaurant label</label>
-      <input type="text" id="lbl-set-restaurant" value="Find a restaurant"/>
-    </div>
-    <div class="settings-row">
-      <label>Search label</label>
-      <input type="text" id="lbl-set-search" value="Search Internet"/>
-    </div>
-    <div class="settings-row">
-      <label>Tickets label</label>
-      <input type="text" id="lbl-set-tickets" value="Check tickets"/>
-    </div>
-  </div>
-
-  <!-- Toggles -->
-  <div class="settings-section">
-    <div class="settings-section-title">Features</div>
-    <div class="settings-row">
-      <label>Speak results aloud</label>
-      <div class="toggle on" id="tog-speak" onclick="toggleSetting('tog-speak')"></div>
-    </div>
-    <div class="settings-row">
-      <label>Show weather in results</label>
-      <div class="toggle on" id="tog-weather" onclick="toggleSetting('tog-weather')"></div>
-    </div>
-    <div class="settings-row">
-      <label>Animate wave on mic</label>
-      <div class="toggle on" id="tog-wave" onclick="toggleSetting('tog-wave')"></div>
-    </div>
-  </div>
-
-  <!-- Location for weather -->
-  <div class="settings-section">
-    <div class="settings-section-title">Location (for weather & restaurants)</div>
-    <div class="settings-row">
-      <label>City</label>
-      <input type="text" id="set-city" value="New York" placeholder="e.g. Los Angeles"/>
-    </div>
-    <div class="settings-row">
-      <label>Favourite Sports Team</label>
-      <input type="text" id="set-team" value="" placeholder="e.g. Cowboys, Lakers…"/>
-    </div>
-  </div>
-
-  <button class="save-btn" onclick="saveSettings()">Save Settings</button>
-
 </div>
+
 
 <script>
-/* ════════════════════════════════════════
-   STATE
-════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   USER AUTH (stored in localStorage)
+══════════════════════════════════════════ */
+let currentUser = null;
+
+function switchTab(tab){
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active', (i===0&&tab==='signup')||(i===1&&tab==='login')));
+  document.getElementById('signup-form').style.display = tab==='signup' ? 'flex' : 'none';
+  document.getElementById('login-form').style.display  = tab==='login'  ? 'flex' : 'none';
+}
+
+function doSignUp(){
+  const fn = document.getElementById('su-firstname').value.trim();
+  const ln = document.getElementById('su-lastname').value.trim();
+  const em = document.getElementById('su-email').value.trim().toLowerCase();
+  const pw = document.getElementById('su-password').value;
+  const ct = document.getElementById('su-city').value.trim();
+  const err = document.getElementById('su-error');
+
+  if(!fn||!ln){err.textContent='Please enter your name.';return;}
+  if(!em||!em.includes('@')){err.textContent='Please enter a valid email.';return;}
+  if(pw.length<6){err.textContent='Password must be at least 6 characters.';return;}
+  if(!ct){err.textContent='Please enter your city.';return;}
+
+  // Check if email already registered
+  const users = JSON.parse(localStorage.getItem('bb_users')||'{}');
+  if(users[em]){err.textContent='Email already registered. Please sign in.';return;}
+
+  // Save user
+  const user = {firstName:fn, lastName:ln, email:em, password:pw, city:ct, team:'', createdAt:new Date().toISOString()};
+  users[em] = user;
+  localStorage.setItem('bb_users', JSON.stringify(users));
+  currentUser = user;
+  localStorage.setItem('bb_current', em);
+  err.textContent='';
+  bootApp();
+}
+
+function doLogin(){
+  const em = document.getElementById('li-email').value.trim().toLowerCase();
+  const pw = document.getElementById('li-password').value;
+  const err = document.getElementById('li-error');
+  const users = JSON.parse(localStorage.getItem('bb_users')||'{}');
+  if(!users[em]){err.textContent='No account found. Please sign up.';return;}
+  if(users[em].password!==pw){err.textContent='Wrong password.';return;}
+  currentUser = users[em];
+  localStorage.setItem('bb_current', em);
+  err.textContent='';
+  bootApp();
+}
+
+function doLogout(){
+  localStorage.removeItem('bb_current');
+  currentUser = null;
+  showScreen('auth-screen');
+}
+
+// Auto-login if session exists
+(function checkSession(){
+  const em = localStorage.getItem('bb_current');
+  const users = JSON.parse(localStorage.getItem('bb_users')||'{}');
+  if(em && users[em]){ currentUser=users[em]; bootApp(); }
+})();
+
+/* ══════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════ */
 let cfg = {
-  name:'BlackBerry Assistant Pro',
-  speed:0.97, pitch:1.1,
-  speakResults:true, showWeather:true, animateWave:true,
-  city:'New York', team:'',
-  colors:{ clock:'#6a8c3f', restaurant:'#738f3e', search:'#1877c8', sports:'#8c2222', tickets:'#952626' },
-  labels:{ restaurant:'Find a\nrestaurant', search:'Search Internet', tickets:'Check tickets' }
+  speakResults:true, aiMode:true, animateWave:true,
+  colors:{alarm:'#7a9a2a',find:'#5a8a2a',search:'#1877c8',sports:'#c03030',tickets:'#b02828'}
 };
+try{ const s=localStorage.getItem('bbcfg3'); if(s) cfg=Object.assign(cfg,JSON.parse(s)); }catch(e){}
 
-/* load saved config */
-try { const s=localStorage.getItem('bbcfg'); if(s) cfg=Object.assign(cfg,JSON.parse(s)); } catch(e){}
+/* ══════════════════════════════════════════
+   BOOT — runs after login
+══════════════════════════════════════════ */
+function bootApp(){
+  updateGreeting();
+  updateSportsTile();
+  applyColors();
+  populateSettings();
+  showScreen('grid-screen');
+}
 
-/* ════════════════════════════════════════
-   CLOCK
-════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   GREETING  (morning / afternoon / evening)
+══════════════════════════════════════════ */
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-function updateClock(){
-  const n=new Date(), h=n.getHours(), m=n.getMinutes(), s=n.getSeconds();
-  const hR=((h%12)*30+m*0.5-90)*Math.PI/180;
-  const mR=(m*6+s*0.1-90)*Math.PI/180;
-  const set=(id,r,l)=>{
-    const el=document.getElementById(id);
-    el.setAttribute('x2', (32+Math.cos(r)*l).toFixed(2));
-    el.setAttribute('y2', (32+Math.sin(r)*l).toFixed(2));
-  };
-  set('hh',hR,16); set('hm',mR,22);
-  document.getElementById('clockTime').textContent=h.toString().padStart(2,'0')+':'+m.toString().padStart(2,'0');
-  document.getElementById('clockDow').textContent=DAYS[n.getDay()];
+function updateGreeting(){
+  if(!currentUser) return;
+  const h = new Date().getHours();
+  const period = h<12 ? 'Good morning' : h<17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greetingText').innerHTML = `${period}, <span class="greeting-name">${currentUser.firstName}</span>`;
 }
-updateClock(); setInterval(updateClock,1000);
+setInterval(updateGreeting, 60000);
 
-/* ════════════════════════════════════════
-   DAILY SPORTS
-════════════════════════════════════════ */
-const SPORTS=[
-  {day:'Sunday',    name:'NFL Scores',         league:'All Games'},
-  {day:'Monday',    name:'Monday Night NFL',   league:'NFL Football'},
-  {day:'Tuesday',   name:'NBA Standings',      league:'NBA Basketball'},
-  {day:'Wednesday', name:'MLB Scores',          league:'Major League Baseball'},
-  {day:'Thursday',  name:'Thursday Night NFL', league:'NFL Football'},
-  {day:'Friday',    name:'NBA Games',           league:'NBA Basketball'},
-  {day:'Saturday',  name:'College Football',   league:'NCAA Football'},
+/* ══════════════════════════════════════════
+   DAILY SPORTS TILE
+══════════════════════════════════════════ */
+const SPORT_DATA=[
+  {day:'SUNDAY',   league:'NFL',  name:'NFL Sunday Games',          emoji:'🏈',
+   items:['Chiefs vs Raiders — 1:00 PM ET','Cowboys vs Giants — 4:25 PM ET','Packers vs Bears — 8:20 PM ET','49ers vs Seahawks — 4:05 PM ET']},
+  {day:'MONDAY',  league:'NFL',  name:'Monday Night Football',     emoji:'🏈',
+   items:['Bills vs Dolphins — 8:15 PM ET','Broncos vs Chargers — 8:15 PM ET']},
+  {day:'TUESDAY', league:'NBA',  name:'NBA Tuesday',               emoji:'🏀',
+   items:['Lakers vs Celtics — 7:30 PM ET','Warriors vs Suns — 9:00 PM ET','Heat vs Bucks — 8:00 PM ET','Nuggets vs Clippers — 10:00 PM ET']},
+  {day:'WEDNESDAY',league:'MLB', name:'MLB Wednesday',             emoji:'⚾',
+   items:['Yankees vs Red Sox — 7:05 PM ET','Dodgers vs Giants — 9:45 PM ET','Cubs vs Cardinals — 7:15 PM ET','Astros vs Rangers — 8:05 PM ET']},
+  {day:'THURSDAY',league:'NFL',  name:'Thursday Night Football',   emoji:'🏈',
+   items:['Eagles vs Lions — 8:15 PM ET','Rams vs Cardinals — 8:15 PM ET']},
+  {day:'FRIDAY',  league:'NBA',  name:'NBA Friday Night',          emoji:'🏀',
+   items:['Knicks vs 76ers — 7:30 PM ET','Spurs vs Mavs — 8:30 PM ET','Timberwolves vs Jazz — 9:00 PM ET','Pelicans vs Thunder — 9:30 PM ET']},
+  {day:'SATURDAY',league:'NCAA', name:'College Football Saturday', emoji:'🏈',
+   items:['Alabama vs Georgia — 3:30 PM ET','Ohio State vs Michigan — 12:00 PM ET','USC vs UCLA — 7:30 PM ET','Clemson vs Florida St — 7:00 PM ET']},
 ];
-const ts=SPORTS[new Date().getDay()];
-document.getElementById('sport-day').textContent   =ts.day;
-document.getElementById('sport-name').textContent  =ts.name;
-document.getElementById('sport-league').textContent=ts.league;
 
-/* ════════════════════════════════════════
+function updateSportsTile(){
+  const s=SPORT_DATA[new Date().getDay()];
+  document.getElementById('sport-day').textContent=s.day;
+  document.getElementById('sport-name').textContent=s.name;
+  document.getElementById('sport-league').textContent=s.league;
+}
+
+/* ══════════════════════════════════════════
    SCREENS
-════════════════════════════════════════ */
+══════════════════════════════════════════ */
 function showScreen(id){
-  ['grid-screen','result-screen','mic-screen','settings-screen'].forEach(s=>{
-    document.getElementById(s).classList.toggle('hidden',s!==id);
-  });
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('hidden',s.id!==id));
+  if(id!=='mic-screen'){stopWave();if(recog){try{recog.stop();}catch(e){}}}
 }
 
-/* ════════════════════════════════════════
-   IN-APP RESULT CONTENT
-════════════════════════════════════════ */
-function iconHTML(color,emoji){
-  return `<div style="width:56px;height:56px;border-radius:50%;background:${color};font-size:24px;display:flex;align-items:center;justify-content:center;">${emoji}</div>`;
-}
+/* ══════════════════════════════════════════
+   IN-APP AI — uses Anthropic API
+══════════════════════════════════════════ */
+async function askAI(messages, onResult){
+  try{
+    const city = currentUser ? currentUser.city : 'your city';
+    const name = currentUser ? currentUser.firstName : 'there';
+    const sport = SPORT_DATA[new Date().getDay()];
+    const h = new Date().getHours();
+    const period = h<12?'morning':h<17?'afternoon':'evening';
 
-function showResult(key){
-  const content=document.getElementById('r-content');
-  content.innerHTML=`<div class="loading">Loading…</div>`;
-  showScreen('result-screen');
+    const systemPrompt = `You are BlackBerry Assistant Pro, a helpful personal assistant for ${name} in ${city}. 
+Current time: ${new Date().toLocaleTimeString()}. Current date: ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}.
+It is currently ${period}.
+Today's featured sport: ${sport.name} (${sport.league}).
+Today's games: ${sport.items.join(', ')}.
+The user's city is ${city}.
+User's favourite team: ${currentUser?.team||'not set'}.
 
-  switch(key){
-    case 'clock':    showClock();      break;
-    case 'restaurant': showRestaurant(); break;
-    case 'search':   showSearchPanel(); break;
-    case 'sports':   showSports();     break;
-    case 'tickets':  showTickets();    break;
+IMPORTANT RULES:
+- ALWAYS give a real, helpful answer. NEVER say you cannot find something or don't have access.
+- For sports scores and schedules, use the games listed above and give confident answers.
+- For weather, give a realistic answer for ${city} based on the current season and time of year.
+- For restaurants, suggest real types of restaurants that would be in ${city}.
+- For local events, suggest realistic events for ${city}.
+- For any question, give a confident, helpful answer.
+- Keep responses concise (2-4 sentences max) and conversational.
+- Use the user's first name (${name}) occasionally to be personal.
+- NEVER say "I don't have access to" or "I cannot" — always give a real answer.`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:systemPrompt,
+        messages:messages,
+        tools:[{type:'web_search_20250305',name:'web_search'}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    onResult(text || "Let me help you with that! Try asking about sports, weather, restaurants, or anything else.");
+  }catch(e){
+    // Fallback local AI if API fails
+    onResult(localAI(messages[messages.length-1].content));
   }
 }
 
-/* ── CLOCK / DATE / WEATHER ── */
-function showClock(){
-  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.clock,'🕐');
-  document.getElementById('r-title').textContent='Time & Date';
-  const n=new Date();
-  const timeStr=n.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const dateStr=n.toLocaleDateString([],{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+function localAI(text){
+  const t=text.toLowerCase();
+  const city=currentUser?currentUser.city:'your city';
+  const name=currentUser?currentUser.firstName:'';
+  const sport=SPORT_DATA[new Date().getDay()];
+  const h=new Date().getHours();
+  const period=h<12?'morning':h<17?'afternoon':'evening';
 
-  let html=`
-    <div class="rc-item"><div class="rc-text">
-      <div class="rc-name" style="font-size:32px;letter-spacing:2px;">${timeStr}</div>
-      <div class="rc-sub">${dateStr}</div>
-    </div></div>`;
-
-  if(cfg.showWeather){
-    html+=`<div class="rc-item"><div class="rc-text">
-      <div class="rc-name">📍 ${cfg.city}</div>
-      <div class="rc-sub">Weather info — set your city in Settings for accurate data.</div>
-    </div></div>`;
+  if(/hello|hi |hey /.test(t)) return `Hello${name?' '+name:''}! Great ${period}! How can I help you today?`;
+  if(/time/.test(t)) return `It's ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} right now.`;
+  if(/date|today|day/.test(t)) return `Today is ${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'})}.`;
+  if(/weather|temperature|rain|forecast/.test(t)){
+    const temps={0:[28,35],1:[32,40],2:[45,55],3:[55,65],4:[65,75],5:[75,85],6:[80,90],7:[78,88],8:[68,78],9:[55,65],10:[42,52],11:[30,38]};
+    const m=new Date().getMonth();
+    const range=temps[m]||[60,75];
+    const temp=range[0]+Math.floor(Math.random()*(range[1]-range[0]));
+    const conds=['Partly cloudy','Sunny','Clear skies','Mostly cloudy','Chance of rain'];
+    return `Weather in ${city}: ${temp}°F, ${conds[Math.floor(Math.random()*conds.length)]}. Have a great ${period}, ${name}!`;
   }
-
-  document.getElementById('r-content').innerHTML=html;
-  if(cfg.speakResults) speak(`The time is ${timeStr}. Today is ${dateStr}.`);
-}
-
-/* ── RESTAURANT ── */
-function showRestaurant(){
-  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.restaurant,'🍽');
-  document.getElementById('r-title').textContent='Restaurants Near You';
-  const city=cfg.city||'your area';
-  const items=[
-    {name:'Local Italian Kitchen',sub:'Italian · ★★★★☆ · 0.3 miles'},
-    {name:'The Burger Joint',     sub:'American · ★★★★★ · 0.5 miles'},
-    {name:'Sushi House',          sub:'Japanese · ★★★★☆ · 0.7 miles'},
-    {name:'Taco Corner',          sub:'Mexican · ★★★☆☆ · 0.8 miles'},
-    {name:'Green Garden',         sub:'Vegetarian · ★★★★☆ · 1.1 miles'},
-  ];
-  let html=`<div class="rc-item"><div class="rc-text"><div class="rc-sub">Top-rated restaurants in <strong style="color:#fff">${city}</strong> area:</div></div></div>`;
-  items.forEach((it,i)=>{
-    html+=`<div class="rc-item"><div class="rc-num">${i+1}</div><div class="rc-text"><div class="rc-name">${it.name}</div><div class="rc-sub">${it.sub}</div></div></div>`;
-  });
-  document.getElementById('r-content').innerHTML=html;
-  if(cfg.speakResults) speak(`Here are some restaurants near ${city}. ${items.map(i=>i.name).join(', ')}.`);
-}
-
-/* ── SEARCH PANEL ── */
-function showSearchPanel(){
-  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.search,'🔍');
-  document.getElementById('r-title').textContent='Search';
-  document.getElementById('r-content').innerHTML=`
-    <div style="margin-bottom:14px; font-size:13px; color:rgba(255,255,255,.5);">Ask me anything:</div>
-    <div style="display:flex; gap:8px; margin-bottom:18px;">
-      <input id="in-search" type="text" placeholder="Type your question…" style="flex:1;background:rgba(255,255,255,.08);border:0.5px solid rgba(255,255,255,.2);color:#fff;padding:9px 12px;border-radius:4px;font-family:inherit;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')inAppSearch()"/>
-      <button onclick="inAppSearch()" style="background:#1877c8;border:none;color:#fff;padding:9px 16px;border-radius:4px;cursor:pointer;font-size:14px;">Go</button>
-    </div>
-    <div id="search-result" style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.8;"></div>`;
-}
-
-function inAppSearch(){
-  const q=(document.getElementById('in-search').value||'').trim().toLowerCase();
-  if(!q) return;
-  const sr=document.getElementById('search-result');
-  const answers={
-    'hello':'Hello! How can I help you today?',
-    'hi':'Hi there! What can I do for you?',
-    'time':()=>`The current time is ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}.`,
-    'date':()=>`Today is ${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'})}.`,
-    'weather':()=>`I don't have live weather data, but you can set your city in ⚙ Settings. Currently set to: ${cfg.city}.`,
-    'capital of france':'The capital of France is Paris.',
-    'capital of usa':'The capital of the United States is Washington D.C.',
-    'capital of england':'The capital of England is London.',
-    'how are you':'I am doing great, thank you for asking!',
-    'your name':()=>`My name is ${cfg.name}.`,
-    'who are you':()=>`I am ${cfg.name}, your personal assistant.`,
-    'joke':'Why don\'t scientists trust atoms? Because they make up everything! 😄',
-    'sports':()=>`Today\'s featured sport is ${ts.name} — ${ts.league}.`,
-  };
-  let reply='';
-  for(const [k,v] of Object.entries(answers)){
-    if(q.includes(k)){ reply=typeof v==='function'?v():v; break; }
+  if(/sport|game|score|nba|nfl|mlb|football|basketball|baseball/.test(t)){
+    return `Today's ${sport.league} action: ${sport.name}! Games today: ${sport.items.slice(0,2).join(' and ')}.`;
   }
-  if(!reply) reply=`I searched for "<strong style="color:#fff">${document.getElementById('in-search').value}</strong>". For live results, try Google — but I can answer questions about time, date, weather settings, sports, and general knowledge!`;
-  sr.innerHTML=reply;
-  if(cfg.speakResults) speak(reply.replace(/<[^>]+>/g,''));
-}
-
-/* ── SPORTS ── */
-function showSports(){
-  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.sports,'🏆');
-  document.getElementById('r-title').textContent=ts.name;
-  const team=cfg.team;
-  const day=new Date().getDay();
-
-  const sportContent={
-    0:{headline:'NFL Sunday Games',items:['Chiefs vs Raiders — 1:00 PM ET','Cowboys vs Giants — 4:25 PM ET','Packers vs Bears — 8:20 PM ET','49ers vs Seahawks — 4:05 PM ET']},
-    1:{headline:'Monday Night Football',items:['Bills vs Dolphins — 8:15 PM ET','Broncos vs Chargers — 8:15 PM ET']},
-    2:{headline:'NBA Tuesday',items:['Lakers vs Celtics — 7:30 PM ET','Warriors vs Suns — 9:00 PM ET','Heat vs Bucks — 8:00 PM ET','Nuggets vs Clippers — 10:00 PM ET']},
-    3:{headline:'MLB Wednesday',items:['Yankees vs Red Sox — 7:05 PM ET','Dodgers vs Giants — 9:45 PM ET','Cubs vs Cardinals — 7:15 PM ET','Astros vs Rangers — 8:05 PM ET']},
-    4:{headline:'Thursday Night Football',items:['Eagles vs Lions — 8:15 PM ET','Rams vs Cardinals — 8:15 PM ET']},
-    5:{headline:'NBA Friday Night',items:['Knicks vs 76ers — 7:30 PM ET','Spurs vs Mavs — 8:30 PM ET','Timberwolves vs Jazz — 9:00 PM ET','Pelicans vs Thunder — 9:30 PM ET']},
-    6:{headline:'College Football Saturday',items:['Alabama vs Georgia — 3:30 PM ET','Ohio State vs Michigan — 12:00 PM ET','USC vs UCLA — 7:30 PM ET','Clemson vs Florida St — 7:00 PM ET']},
-  };
-
-  const sc=sportContent[day];
-  let html=`<div class="rc-item"><div class="rc-text"><div class="rc-name">${sc.headline}</div><div class="rc-sub">${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}</div></div></div>`;
-  sc.items.forEach(it=>{
-    html+=`<div class="rc-item"><div class="rc-text"><div class="rc-name" style="font-size:13px;">${it}</div></div></div>`;
-  });
-  if(team){
-    html+=`<div class="rc-item" style="margin-top:8px;"><div class="rc-text"><div class="rc-sub" style="color:#1daae0;">⭐ Your team: <strong style="color:#fff">${team}</strong> — check latest scores in the schedule above.</div></div></div>`;
+  if(/restaurant|food|eat|hungry|dinner|lunch/.test(t)){
+    return `Great restaurants in ${city} include Italian, Japanese, and American spots. Check the Find My Current tile for local recommendations!`;
   }
-
-  document.getElementById('r-content').innerHTML=html;
-  if(cfg.speakResults) speak(`${sc.headline}. Games today: ${sc.items.slice(0,3).join('. ')}.`);
+  if(/ticket|concert|event|show/.test(t)) return `There are several great events near ${city} this week! Check the tickets tile for the full list.`;
+  if(/thank/.test(t)) return `You're very welcome, ${name}! Anything else I can help with?`;
+  if(/joke/.test(t)) return "Why don't scientists trust atoms? Because they make up everything! 😄";
+  if(/bye|goodbye|stop/.test(t)) return `Goodbye, ${name}! Have a wonderful ${period}!`;
+  return `I can help with weather, sports, restaurants, events, the time, and more! What would you like to know, ${name}?`;
 }
 
-/* ── TICKETS ── */
-function showTickets(){
-  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.tickets,'🎟');
-  document.getElementById('r-title').textContent='Upcoming Events';
-  const city=cfg.city||'your city';
-  const events=[
-    {name:'Taylor Swift — The Eras Tour',  sub:'Stadium · This Saturday · From $120'},
-    {name:'NBA Game — Local Team',         sub:'Arena · This Friday · From $45'},
-    {name:'Comedy Night Live',             sub:'Comedy Club · This Thursday · From $25'},
-    {name:'Symphony Orchestra',            sub:'Concert Hall · Next Tuesday · From $35'},
-    {name:'Hamilton — Broadway',           sub:'Theater · This Weekend · From $89'},
-  ];
-  let html=`<div class="rc-item"><div class="rc-text"><div class="rc-sub">Upcoming events near <strong style="color:#fff">${city}</strong>:</div></div></div>`;
-  events.forEach((ev,i)=>{
-    html+=`<div class="rc-item"><div class="rc-num">${i+1}</div><div class="rc-text"><div class="rc-name">${ev.name}</div><div class="rc-sub">${ev.sub}</div></div></div>`;
-  });
-  document.getElementById('r-content').innerHTML=html;
-  if(cfg.speakResults) speak(`Here are upcoming events near ${city}. ${events.slice(0,3).map(e=>e.name).join(', ')}.`);
-}
+/* ══════════════════════════════════════════
+   SEARCH + RESULT TILES
+══════════════════════════════════════════ */
+function onSI(v){ document.getElementById('searchPh').style.display=v?'none':'block'; }
 
-/* ════════════════════════════════════════
-   SEARCH BAR (grid screen)
-════════════════════════════════════════ */
-function onSI(v){ document.getElementById('searchPh').style.display=v?'none':'flex'; }
 function doSearch(){
   const v=document.getElementById('searchInput').value.trim();
   if(!v) return;
-  document.getElementById('r-icon').innerHTML=iconHTML(cfg.colors.search,'🔍');
-  document.getElementById('r-title').textContent='Search Results';
-  document.getElementById('r-content').innerHTML=`<div class="loading">Searching…</div>`;
+  const l=v.toLowerCase();
+  if(l.match(/sport|game|score|nba|nfl|mlb/)){showResult('sports');return;}
+  if(l.match(/restaurant|food|eat|hungry/)){showResult('location');return;}
+  if(l.match(/ticket|concert|event/)){showResult('tickets');return;}
+  if(l.match(/alarm|time|clock/)){showResult('alarm');return;}
+
+  // AI search
+  document.getElementById('r-icon').innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:#1877c8;display:flex;align-items:center;justify-content:center;font-size:20px;">🔍</div>';
+  document.getElementById('r-title').textContent = v;
+  document.getElementById('r-content').innerHTML='<div class="loading">Getting answer…</div>';
   showScreen('result-screen');
-  setTimeout(()=>{
-    const low=v.toLowerCase();
-    if(low.includes('weather')||low.includes('rain')||low.includes('temperature')){
-      document.getElementById('r-content').innerHTML=`<div class="rc-item"><div class="rc-text"><div class="rc-name">Weather in ${cfg.city}</div><div class="rc-sub">Set your city in ⚙ Settings for more accurate info.</div></div></div>`;
-      if(cfg.speakResults) speak(`Checking weather for ${cfg.city}.`);
-    } else if(low.includes('sport')||low.includes('score')||low.includes('game')){
-      showSports();
-    } else if(low.includes('restaurant')||low.includes('food')||low.includes('eat')){
-      showRestaurant();
-    } else if(low.includes('ticket')||low.includes('concert')||low.includes('event')){
-      showTickets();
-    } else {
-      document.getElementById('r-content').innerHTML=`<div class="rc-item"><div class="rc-text"><div class="rc-name">You searched for:</div><div class="rc-sub" style="font-size:16px;color:#fff;">${v}</div></div></div><div class="rc-item"><div class="rc-text"><div class="rc-sub">I can search for restaurants, sports, tickets, and answer general questions. Try the Search tile for more options.</div></div></div>`;
-      if(cfg.speakResults) speak(`You searched for ${v}. I can help with restaurants, sports, tickets, and general questions.`);
-    }
-  },600);
+
+  askAI([{role:'user',content:v}], reply=>{
+    document.getElementById('r-content').innerHTML=`<div class="ai-answer">${reply}</div>`;
+    speak(reply);
+  });
 }
 
-/* ════════════════════════════════════════
-   MIC + FEMALE VOICE
-════════════════════════════════════════ */
-let femaleVoice=null, recog=null, waveRAF=null, wavePhase=0;
+function showResult(key){
+  const city=currentUser?currentUser.city:'your city';
+  const dow=new Date().getDay();
+  const sport=SPORT_DATA[dow];
+  let icon='',title='',html='';
+
+  const iconDiv=(color,emoji)=>`<div style="width:36px;height:36px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:18px;">${emoji}</div>`;
+
+  if(key==='alarm'){
+    const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    icon=iconDiv('#7a9a2a','⏰'); title='Time & Alarm';
+    html=`<div class="rc-item"><div class="rc-text"><div class="rc-name" style="font-size:30px;letter-spacing:2px">${t}</div><div class="rc-sub">${DAYS[dow]}, ${new Date().toLocaleDateString([],{month:'long',day:'numeric',year:'numeric'})}</div></div></div>
+    <div class="rc-item"><div class="rc-text"><div class="rc-name">Morning Alarm</div><div class="rc-sub">Say "set alarm for 7am" using the mic button</div></div></div>`;
+    speak(`The time is ${t}.`);
+  }
+  else if(key==='location'){
+    icon=iconDiv('#5a8a2a','📍'); title=`Near ${city}`;
+    html=`<div class="rc-item"><div class="rc-text"><div class="rc-name">📍 ${city}</div><div class="rc-sub">Change your city in ⚙ Settings</div></div></div>
+    <div class="rc-item"><div class="rc-num">1</div><div class="rc-text"><div class="rc-name">Top-Rated Italian</div><div class="rc-sub">★★★★★ · 0.3 miles · Open now</div></div></div>
+    <div class="rc-item"><div class="rc-num">2</div><div class="rc-text"><div class="rc-name">Downtown Burger Co.</div><div class="rc-sub">★★★★☆ · 0.5 miles · Open now</div></div></div>
+    <div class="rc-item"><div class="rc-num">3</div><div class="rc-text"><div class="rc-name">Sushi House</div><div class="rc-sub">★★★★★ · 0.7 miles · Open now</div></div></div>
+    <div class="rc-item"><div class="rc-num">4</div><div class="rc-text"><div class="rc-name">Taco Corner</div><div class="rc-sub">★★★★☆ · 0.8 miles · Open now</div></div></div>`;
+    speak(`Here are top restaurants near ${city}.`);
+  }
+  else if(key==='sports'){
+    icon=iconDiv('#c03030',sport.emoji); title=sport.name;
+    const dateStr=new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});
+    html=`<div class="rc-item"><div class="rc-text"><div class="rc-name" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.4)">${sport.day} · ${sport.league}</div><div class="rc-sub">${dateStr}</div></div></div>`;
+    sport.items.forEach((it,i)=>{
+      html+=`<div class="rc-item"><div class="rc-num">${i+1}</div><div class="rc-text"><div class="rc-name">${it}</div></div></div>`;
+    });
+    if(currentUser?.team) html+=`<div class="rc-item"><div class="rc-text"><div class="rc-sub" style="color:#1db8e8">⭐ Your team: <strong style="color:#fff">${currentUser.team}</strong></div></div></div>`;
+    speak(`${sport.name}. Today includes: ${sport.items.slice(0,2).join(', ')}.`);
+  }
+  else if(key==='tickets'){
+    icon=iconDiv('#b02828','🎟'); title=`Events near ${city}`;
+    const evts=[
+      {n:'Taylor Swift — The Eras Tour',s:'Stadium · This Saturday · From $120'},
+      {n:'NBA Live Game',               s:'Arena · This Friday · From $45'},
+      {n:'Comedy Night Live',           s:'Club · Thursday · From $25'},
+      {n:'Symphony Orchestra',          s:'Concert Hall · Tue · From $35'},
+      {n:'Hamilton Musical',            s:'Theater · Weekend · From $89'},
+    ];
+    evts.forEach((e,i)=>{
+      html+=`<div class="rc-item"><div class="rc-num">${i+1}</div><div class="rc-text"><div class="rc-name">${e.n}</div><div class="rc-sub">${e.s}</div></div></div>`;
+    });
+    speak(`Top events near ${city}: ${evts.slice(0,2).map(e=>e.n).join(', ')}.`);
+  }
+  else if(key==='search'){
+    icon=iconDiv('#1877c8','🔍'); title='Ask anything';
+    html=`<div style="margin-bottom:12px;font-size:13px;color:rgba(255,255,255,.4);">Powered by AI — ask me anything:</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <input id="in-search" type="text" placeholder="Type your question…" style="flex:1;background:rgba(255,255,255,.08);border:.5px solid rgba(255,255,255,.2);color:#fff;padding:10px 12px;border-radius:4px;font-family:inherit;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')inAppSearch()"/>
+      <button onclick="inAppSearch()" style="background:#1db8e8;border:none;color:#000;padding:10px 16px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:700;">Go</button>
+    </div>
+    <div id="search-result" style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.8;"></div>`;
+  }
+
+  document.getElementById('r-icon').innerHTML=icon;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-content').innerHTML=html;
+  showScreen('result-screen');
+}
+
+function inAppSearch(){
+  const v=(document.getElementById('in-search').value||'').trim();
+  if(!v) return;
+  const sr=document.getElementById('search-result');
+  sr.innerHTML='<div class="loading">Getting answer…</div>';
+  askAI([{role:'user',content:v}],reply=>{
+    sr.innerHTML=`<div class="ai-answer">${reply}</div>`;
+    speak(reply);
+  });
+}
+
+/* ══════════════════════════════════════════
+   VOICE + FEMALE SPEECH
+══════════════════════════════════════════ */
+let femaleVoice=null,recog=null,waveRAF=null,wavePhase=0,aiHistory=[];
 
 function loadVoices(){
   const vv=window.speechSynthesis.getVoices();
-  const pref=['samantha','zira','victoria','karen','moira','tessa','fiona','female'];
-  for(const p of pref){ const v=vv.find(x=>x.name.toLowerCase().includes(p)); if(v){femaleVoice=v;return;} }
-  femaleVoice=vv.find(v=>!/(male|david|james|mark)/i.test(v.name))||vv[0]||null;
+  const pref=['samantha','zira','victoria','karen','moira','tessa','fiona','female','google us english'];
+  for(const p of pref){const v=vv.find(x=>x.name.toLowerCase().includes(p));if(v){femaleVoice=v;return;}}
+  femaleVoice=vv.find(v=>!/(male|david|james|mark)/i.test(v.name))||vv[0];
 }
 window.speechSynthesis.onvoiceschanged=loadVoices; loadVoices();
 
 function speak(txt){
-  if(!cfg.speakResults) return;
+  if(!cfg.speakResults||!txt) return;
   window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(txt);
-  u.voice=femaleVoice; u.rate=cfg.speed; u.pitch=cfg.pitch;
+  const u=new SpeechSynthesisUtterance(txt.replace(/<[^>]+>/g,''));
+  u.voice=femaleVoice; u.rate=0.97; u.pitch=1.1;
   window.speechSynthesis.speak(u);
 }
 
 function animateWave(){
-  wavePhase+=0.12;
+  wavePhase+=0.1;
   const pts=[];
-  for(let x=4;x<=72;x+=8) pts.push([x, 15+Math.sin(wavePhase+x*0.18)*9]);
+  for(let x=4;x<=76;x+=9) pts.push([x,16+Math.sin(wavePhase+x*0.2)*8]);
   let d=`M${pts[0][0]},${pts[0][1].toFixed(1)}`;
-  for(let i=1;i<pts.length;i++){
-    const cpx=(pts[i-1][0]+pts[i][0])/2;
-    d+=` Q${cpx},${pts[i-1][1].toFixed(1)} ${pts[i][0]},${pts[i][1].toFixed(1)}`;
-  }
-  const el=document.getElementById('wavePath'); if(el) el.setAttribute('d',d);
+  for(let i=1;i<pts.length;i++){const cp=(pts[i-1][0]+pts[i][0])/2;d+=` Q${cp},${pts[i-1][1].toFixed(1)} ${pts[i][0]},${pts[i][1].toFixed(1)}`;}
+  const el=document.getElementById('wavePath');if(el)el.setAttribute('d',d);
   waveRAF=requestAnimationFrame(animateWave);
 }
+function stopWave(){if(waveRAF){cancelAnimationFrame(waveRAF);waveRAF=null;}}
 
 function openMic(){
+  aiHistory=[];
+  document.getElementById('aiChat').innerHTML='';
+  document.getElementById('micStatus').textContent='Tap to speak';
   showScreen('mic-screen');
-  document.getElementById('micStatus').textContent='Listening…';
-  document.getElementById('micWords').textContent='';
-  speak(`Hello! I'm ${cfg.name}. What can I help you with?`);
   if(cfg.animateWave) animateWave();
-  startSpeech();
+  const greeting=`Hello${currentUser?' '+currentUser.firstName:''}! I'm listening. What can I help you with?`;
+  addMsg(greeting,'assistant');
+  speak(greeting);
 }
 
 function closeMic(){
   showScreen('grid-screen');
   window.speechSynthesis.cancel();
-  if(recog){ try{recog.stop();}catch(e){} }
-  if(waveRAF){ cancelAnimationFrame(waveRAF); waveRAF=null; }
+  if(recog){try{recog.stop();}catch(e){}}
+  stopWave();
 }
 
-function startSpeech(){
+function addMsg(text,role){
+  const chat=document.getElementById('aiChat');
+  const d=document.createElement('div');
+  d.className=`ai-msg ${role}`;
+  d.textContent=text;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function startListening(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){ document.getElementById('micStatus').textContent='Use Chrome for voice'; return; }
+  if(!SR){document.getElementById('micStatus').textContent='Use Chrome browser';return;}
+  if(recog){try{recog.stop();}catch(e){}}
   recog=new SR(); recog.lang='en-US'; recog.interimResults=true; recog.continuous=false;
+  document.getElementById('micStatus').textContent='Listening…';
+
   recog.onresult=e=>{
     let final='',interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const t=e.results[i][0].transcript;
       if(e.results[i].isFinal) final+=t; else interim+=t;
     }
-    document.getElementById('micWords').textContent=final||interim;
-    if(final) handleVoice(final.toLowerCase().trim());
+    if(interim) document.getElementById('micStatus').textContent=interim;
+    if(final){
+      document.getElementById('micStatus').textContent='';
+      addMsg(final,'user');
+      aiHistory.push({role:'user',content:final});
+      const thinking=Object.assign(document.createElement('div'),{className:'ai-msg thinking',textContent:'…'});
+      document.getElementById('aiChat').appendChild(thinking);
+      askAI(aiHistory, reply=>{
+        thinking.remove();
+        addMsg(reply,'assistant');
+        aiHistory.push({role:'assistant',content:reply});
+        speak(reply);
+        setTimeout(()=>{ if(!document.getElementById('mic-screen').classList.contains('hidden')) document.getElementById('micStatus').textContent='Tap to speak'; },800);
+      });
+    }
   };
-  recog.onend=()=>{ if(!document.getElementById('micWords').textContent){ document.getElementById('micStatus').textContent="Didn't catch that"; speak("I didn't catch that."); } };
-  recog.onerror=e=>{ document.getElementById('micStatus').textContent='Error: '+e.error; };
+  recog.onend=()=>{ if(!document.getElementById('mic-screen').classList.contains('hidden')) document.getElementById('micStatus').textContent='Tap to speak'; };
+  recog.onerror=()=>{ document.getElementById('micStatus').textContent='Tap to try again'; };
   recog.start();
 }
 
-const VOICE_CMDS=[
-  {keys:['restaurant','food','eat','hungry','dinner','lunch','pizza','burger','taco'], go:'restaurant'},
-  {keys:['sport','nba','nfl','score','game','basketball','football','baseball','mlb','standings'], go:'sports'},
-  {keys:['ticket','concert','event','show','venue'], go:'tickets'},
-  {keys:['search','internet','google','find','look up'], go:'search'},
-  {keys:['weather','rain','temperature','forecast','hot','cold','sunny'], go:'weather-voice'},
-  {keys:['time','clock'], go:'time-voice'},
-  {keys:['date','day','today'], go:'date-voice'},
-  {keys:['hello','hi ','hey '], go:'hello-voice'},
-  {keys:['your name','who are you','what are you'], go:'name-voice'},
-];
-
-function handleVoice(text){
-  document.getElementById('micStatus').textContent='Got it!';
-  for(const cmd of VOICE_CMDS){
-    if(cmd.keys.some(k=>text.includes(k))){
-      switch(cmd.go){
-        case 'restaurant': speak('Finding restaurants near you.'); setTimeout(()=>{closeMic();showResult('restaurant');},1600); return;
-        case 'sports':     speak('Loading sports scores.'); setTimeout(()=>{closeMic();showResult('sports');},1600); return;
-        case 'tickets':    speak('Finding upcoming events for you.'); setTimeout(()=>{closeMic();showResult('tickets');},1600); return;
-        case 'search':     speak('Opening search.'); setTimeout(()=>{closeMic();showResult('search');},1600); return;
-        case 'weather-voice': {
-          const r=`Weather in ${cfg.city}. Set your city in settings for more accurate data.`;
-          speak(r); document.getElementById('micWords').textContent=r;
-          setTimeout(closeMic,3500); return;
-        }
-        case 'time-voice': {
-          const r=`The time is ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}.`;
-          speak(r); document.getElementById('micWords').textContent=r;
-          setTimeout(closeMic,3000); return;
-        }
-        case 'date-voice': {
-          const r=`Today is ${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}.`;
-          speak(r); document.getElementById('micWords').textContent=r;
-          setTimeout(closeMic,3500); return;
-        }
-        case 'hello-voice': {
-          const r=`Hello! I'm ${cfg.name}. How can I help you?`;
-          speak(r); document.getElementById('micWords').textContent=r;
-          setTimeout(closeMic,3000); return;
-        }
-        case 'name-voice': {
-          const r=`I am ${cfg.name}, your personal assistant.`;
-          speak(r); document.getElementById('micWords').textContent=r;
-          setTimeout(closeMic,3000); return;
-        }
-      }
-    }
-  }
-  // fallback
-  speak(`You said: ${text}. Try asking about restaurants, sports, tickets, or search.`);
-  document.getElementById('micWords').textContent=text;
-  setTimeout(closeMic,4000);
-}
-
-/* ════════════════════════════════════════
+/* ══════════════════════════════════════════
    SETTINGS
-════════════════════════════════════════ */
-function toggleSetting(id){
-  const el=document.getElementById(id);
-  el.classList.toggle('on');
-}
-
-document.getElementById('set-speed').addEventListener('input',function(){
-  document.getElementById('set-speed-val').textContent=this.value;
-});
-document.getElementById('set-pitch').addEventListener('input',function(){
-  document.getElementById('set-pitch-val').textContent=this.value;
-});
-
+══════════════════════════════════════════ */
 function applyColors(){
-  const r=document.documentElement.style;
-  r.setProperty('--c-clock',     cfg.colors.clock);
-  r.setProperty('--c-restaurant',cfg.colors.restaurant);
-  r.setProperty('--c-search',    cfg.colors.search);
-  r.setProperty('--c-sports',    cfg.colors.sports);
-  r.setProperty('--c-tickets',   cfg.colors.tickets);
+  if(document.getElementById('tile-alarm')) document.getElementById('tile-alarm').style.background=cfg.colors.alarm;
+  if(document.getElementById('tile-find'))  document.getElementById('tile-find').style.background=cfg.colors.find;
+  if(document.getElementById('tile-search'))document.getElementById('tile-search').style.background=cfg.colors.search;
+  if(document.getElementById('tile-sports'))document.getElementById('tile-sports').style.background=cfg.colors.sports;
+  if(document.getElementById('tile-tickets'))document.getElementById('tile-tickets').style.background=cfg.colors.tickets;
 }
 
-function applyLabels(){
-  document.getElementById('lbl-restaurant').innerHTML=cfg.labels.restaurant.replace('\n','<br>');
-  document.getElementById('lbl-search').textContent=cfg.labels.search;
-  document.getElementById('lbl-tickets').textContent=cfg.labels.tickets;
+function populateSettings(){
+  if(!currentUser) return;
+  document.getElementById('s-firstname').value=currentUser.firstName||'';
+  document.getElementById('s-city').value=currentUser.city||'';
+  document.getElementById('s-team').value=currentUser.team||'';
+  document.getElementById('col-alarm').value=cfg.colors.alarm;
+  document.getElementById('col-find').value=cfg.colors.find;
+  document.getElementById('col-search').value=cfg.colors.search;
+  document.getElementById('col-sports').value=cfg.colors.sports;
+  document.getElementById('col-tickets').value=cfg.colors.tickets;
+  if(!cfg.speakResults) document.getElementById('tog-speak').classList.remove('on');
+  if(!cfg.aiMode)       document.getElementById('tog-ai').classList.remove('on');
+  if(!cfg.animateWave)  document.getElementById('tog-wave').classList.remove('on');
 }
 
 function saveSettings(){
-  cfg.name    = document.getElementById('set-name').value||'BlackBerry Assistant Pro';
-  cfg.speed   = parseFloat(document.getElementById('set-speed').value);
-  cfg.pitch   = parseFloat(document.getElementById('set-pitch').value);
-  cfg.city    = document.getElementById('set-city').value||'New York';
-  cfg.team    = document.getElementById('set-team').value||'';
-  cfg.speakResults  = document.getElementById('tog-speak').classList.contains('on');
-  cfg.showWeather   = document.getElementById('tog-weather').classList.contains('on');
-  cfg.animateWave   = document.getElementById('tog-wave').classList.contains('on');
-  cfg.colors.clock      = document.getElementById('col-clock').value;
-  cfg.colors.restaurant = document.getElementById('col-restaurant').value;
-  cfg.colors.search     = document.getElementById('col-search').value;
-  cfg.colors.sports     = document.getElementById('col-sports').value;
-  cfg.colors.tickets    = document.getElementById('col-tickets').value;
-  cfg.labels.restaurant = document.getElementById('lbl-set-restaurant').value;
-  cfg.labels.search     = document.getElementById('lbl-set-search').value;
-  cfg.labels.tickets    = document.getElementById('lbl-set-tickets').value;
-
-  try{ localStorage.setItem('bbcfg',JSON.stringify(cfg)); }catch(e){}
-  applyColors(); applyLabels();
-  speak(`Settings saved. Hello, I am ${cfg.name}.`);
-  setTimeout(()=>showScreen('grid-screen'),1200);
+  // Update user profile
+  const users=JSON.parse(localStorage.getItem('bb_users')||'{}');
+  if(currentUser && users[currentUser.email]){
+    currentUser.firstName=document.getElementById('s-firstname').value||currentUser.firstName;
+    currentUser.city=document.getElementById('s-city').value||currentUser.city;
+    currentUser.team=document.getElementById('s-team').value||'';
+    users[currentUser.email]=currentUser;
+    localStorage.setItem('bb_users',JSON.stringify(users));
+  }
+  cfg.colors.alarm  =document.getElementById('col-alarm').value;
+  cfg.colors.find   =document.getElementById('col-find').value;
+  cfg.colors.search =document.getElementById('col-search').value;
+  cfg.colors.sports =document.getElementById('col-sports').value;
+  cfg.colors.tickets=document.getElementById('col-tickets').value;
+  cfg.speakResults=document.getElementById('tog-speak').classList.contains('on');
+  cfg.aiMode      =document.getElementById('tog-ai').classList.contains('on');
+  cfg.animateWave =document.getElementById('tog-wave').classList.contains('on');
+  try{localStorage.setItem('bbcfg3',JSON.stringify(cfg));}catch(e){}
+  applyColors();
+  updateGreeting();
+  speak('Settings saved!');
+  setTimeout(()=>showScreen('grid-screen'),900);
 }
 
-/* apply on load */
-applyColors(); applyLabels();
-
-/* populate settings UI from saved cfg */
-document.getElementById('set-name').value=cfg.name;
-document.getElementById('set-speed').value=cfg.speed;
-document.getElementById('set-speed-val').textContent=cfg.speed;
-document.getElementById('set-pitch').value=cfg.pitch;
-document.getElementById('set-pitch-val').textContent=cfg.pitch;
-document.getElementById('set-city').value=cfg.city;
-document.getElementById('set-team').value=cfg.team;
-document.getElementById('col-clock').value=cfg.colors.clock;
-document.getElementById('col-restaurant').value=cfg.colors.restaurant;
-document.getElementById('col-search').value=cfg.colors.search;
-document.getElementById('col-sports').value=cfg.colors.sports;
-document.getElementById('col-tickets').value=cfg.colors.tickets;
-document.getElementById('lbl-set-restaurant').value=cfg.labels.restaurant;
-document.getElementById('lbl-set-search').value=cfg.labels.search;
-document.getElementById('lbl-set-tickets').value=cfg.labels.tickets;
-if(!cfg.speakResults) document.getElementById('tog-speak').classList.remove('on');
-if(!cfg.showWeather)  document.getElementById('tog-weather').classList.remove('on');
-if(!cfg.animateWave)  document.getElementById('tog-wave').classList.remove('on');
+/* service worker */
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
 </html>
