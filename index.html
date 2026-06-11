@@ -182,56 +182,58 @@
     <div class="auth-tab" onclick="switchTab('login')">Sign In</div>
   </div>
 
-  <!-- SIGN UP -->
-  <div id="signup-form" style="width:100%;display:flex;flex-direction:column;gap:11px;">
-    <input class="auth-input" id="su-fn" type="text" placeholder="First Name" autocomplete="given-name"/>
-    <input class="auth-input" id="su-ln" type="text" placeholder="Last Name" autocomplete="family-name"/>
-    <input class="auth-input" id="su-em" type="email" placeholder="Email Address" autocomplete="email"/>
-    <input class="auth-input" id="su-pw" type="password" placeholder="Create Password (min 6 chars)" autocomplete="new-password"/>
-    <input class="auth-input" id="su-ct" type="text" placeholder="Your City (for local info)" autocomplete="address-level2"/>
+  <!-- SIGN UP FORM — shown by default -->
+  <div id="signup-form" style="display:flex;flex-direction:column;gap:11px;width:100%;">
+    <input class="auth-input" id="su-fn" type="text"     placeholder="First Name"/>
+    <input class="auth-input" id="su-ln" type="text"     placeholder="Last Name"/>
+    <input class="auth-input" id="su-em" type="email"    placeholder="Email Address"/>
+    <input class="auth-input" id="su-pw" type="password" placeholder="Password (at least 6 characters)"/>
+    <input class="auth-input" id="su-ct" type="text"     placeholder="Your City (e.g. New York)"/>
     <div class="auth-error" id="su-err"></div>
-    <button class="auth-btn" onclick="doSignUp()">Create Free Account</button>
-    <div style="font-size:11px;color:rgba(255,255,255,.22);text-align:center;">Your data is saved on this device only</div>
+    <button class="auth-btn" type="button" onclick="doSignUp()">Create Free Account</button>
+    <div style="font-size:11px;color:rgba(255,255,255,.2);text-align:center;">Your data is saved only on this device</div>
   </div>
 
-  <!-- SIGN IN -->
-  <div id="login-form" style="display:none;">
-    <input class="auth-input" id="li-em" type="email" placeholder="Email Address" autocomplete="email"/>
-    <input class="auth-input" id="li-pw" type="password" placeholder="Password" autocomplete="current-password"/>
-    <div class="remember-row">
-      <input type="checkbox" id="li-rem" checked/>
-      <label for="li-rem">Remember me</label>
+  <!-- SIGN IN FORM — hidden by default -->
+  <div id="login-form" style="display:none;flex-direction:column;gap:11px;width:100%;">
+    <input class="auth-input" id="li-em" type="email"    placeholder="Email Address"/>
+    <input class="auth-input" id="li-pw" type="password" placeholder="Password"/>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="li-rem" checked style="width:16px;height:16px;accent-color:#1db8e8;cursor:pointer;"/>
+      <label for="li-rem" style="font-size:13px;color:rgba(255,255,255,.55);cursor:pointer;">Remember me</label>
     </div>
     <div class="auth-error" id="li-err"></div>
-    <button class="auth-btn" onclick="doLogin()">Sign In</button>
+    <button class="auth-btn" type="button" onclick="doLogin()">Sign In</button>
     <div style="text-align:center;">
-      <button class="link-btn" onclick="showForgot()">Forgot password?</button>
+      <button type="button" onclick="showForgot()" style="font-size:12px;color:#1db8e8;cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit;">Forgot password?</button>
     </div>
   </div>
 
-  <!-- FORGOT — Step 1 -->
-  <div id="forgot-form" style="display:none;">
-    <div style="text-align:center;font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;">Enter your email and we'll generate a reset code.</div>
+  <!-- FORGOT PASSWORD — Step 1 -->
+  <div id="forgot-form" style="display:none;flex-direction:column;gap:11px;width:100%;">
+    <div style="text-align:center;font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;">Enter your email and we will generate a reset code.</div>
     <input class="auth-input" id="fp-em" type="email" placeholder="Your Email Address"/>
     <div class="auth-error" id="fp-err"></div>
-    <button class="auth-btn" onclick="sendResetCode()">Send Reset Code</button>
-    <div style="text-align:center;"><button class="link-btn" onclick="showForgot('back')" style="color:rgba(255,255,255,.35);">← Back to Sign In</button></div>
+    <button class="auth-btn" type="button" onclick="sendResetCode()">Send Reset Code</button>
+    <div style="text-align:center;">
+      <button type="button" onclick="showForgot('back')" style="font-size:12px;color:rgba(255,255,255,.35);cursor:pointer;background:none;border:none;font-family:inherit;">← Back to Sign In</button>
+    </div>
   </div>
 
-  <!-- FORGOT — Step 2 -->
-  <div id="reset-form" style="display:none;">
+  <!-- FORGOT PASSWORD — Step 2 -->
+  <div id="reset-form" style="display:none;flex-direction:column;gap:11px;width:100%;">
     <div style="background:rgba(29,184,232,.1);border:1px solid rgba(29,184,232,.28);border-radius:8px;padding:12px 14px;text-align:center;">
-      <div style="font-size:13px;color:#1db8e8;font-weight:600;margin-bottom:4px;">Code Sent!</div>
+      <div style="font-size:13px;color:#1db8e8;font-weight:600;margin-bottom:4px;">Code Generated!</div>
       <div id="reset-hint" style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;"></div>
     </div>
-    <input class="auth-input" id="rp-code" type="text" placeholder="Enter 6-digit code" maxlength="6" style="letter-spacing:6px;text-align:center;font-size:20px;font-weight:600;"/>
-    <input class="auth-input" id="rp-np" type="password" placeholder="New Password"/>
-    <input class="auth-input" id="rp-cf" type="password" placeholder="Confirm New Password"/>
+    <input class="auth-input" id="rp-code" type="text"     placeholder="Enter 6-digit code" maxlength="6" style="letter-spacing:6px;text-align:center;font-size:20px;font-weight:600;"/>
+    <input class="auth-input" id="rp-np"   type="password" placeholder="New Password"/>
+    <input class="auth-input" id="rp-cf"   type="password" placeholder="Confirm New Password"/>
     <div class="auth-error" id="rp-err"></div>
-    <button class="auth-btn" onclick="doResetPassword()">Reset Password</button>
+    <button class="auth-btn" type="button" onclick="doResetPassword()">Reset Password</button>
     <div style="display:flex;justify-content:center;gap:18px;">
-      <button class="link-btn" onclick="resendCode()">Resend code</button>
-      <button class="link-btn" onclick="showForgot('back')" style="color:rgba(255,255,255,.32);">← Back</button>
+      <button type="button" onclick="resendCode()" style="font-size:12px;color:#1db8e8;cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit;">Resend code</button>
+      <button type="button" onclick="showForgot('back')" style="font-size:12px;color:rgba(255,255,255,.3);cursor:pointer;background:none;border:none;font-family:inherit;">← Back</button>
     </div>
   </div>
 
@@ -699,143 +701,192 @@
 /* ══════════════════════════════
    AUTH
 ══════════════════════════════ */
-let currentUser=null;
-let _resetCode='', _resetEmail='';
+let currentUser = null;
+let _resetCode = '';
+let _resetEmail = '';
 
-function switchTab(tab){
-  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='signup')||(i===1&&tab==='login')));
-  const sf=document.getElementById('signup-form');
-  const lf=document.getElementById('login-form');
-  const ff=document.getElementById('forgot-form');
-  const rf=document.getElementById('reset-form');
-  sf.style.cssText = tab==='signup' ? 'width:100%;display:flex;flex-direction:column;gap:11px;' : 'display:none;';
-  lf.style.cssText = tab==='login'  ? 'width:100%;display:flex;flex-direction:column;gap:11px;' : 'display:none;';
-  ff.style.cssText = 'display:none;';
-  rf.style.cssText = 'display:none;';
-}
-
-function shake(id){const el=document.getElementById(id);if(!el)return;el.style.animation='none';el.offsetHeight;el.style.animation='shake .4s ease';}
-
-function doSignUp(){
-  const fn=document.getElementById('su-fn').value.trim();
-  const ln=document.getElementById('su-ln').value.trim();
-  const em=document.getElementById('su-em').value.trim().toLowerCase();
-  const pw=document.getElementById('su-pw').value;
-  const ct=document.getElementById('su-ct').value.trim();
-  const err=document.getElementById('su-err');
-  if(!fn){err.textContent='❌ First name is required.';shake('su-fn');return;}
-  if(!ln){err.textContent='❌ Last name is required.';shake('su-ln');return;}
-  if(!em||!em.includes('@')||!em.includes('.')){err.textContent='❌ Please enter a valid email address.';shake('su-em');return;}
-  if(pw.length<6){err.textContent='❌ Password must be at least 6 characters.';shake('su-pw');return;}
-  if(!ct){err.textContent='❌ Please enter your city so we can show local info.';shake('su-ct');return;}
-  const users=JSON.parse(localStorage.getItem('bb_users')||'{}');
-  if(users[em]){err.textContent='❌ That email is already registered. Please sign in.';shake('su-em');return;}
-  const user={firstName:fn,lastName:ln,email:em,password:pw,city:ct,country:'',team:'',createdAt:new Date().toISOString()};
-  users[em]=user; localStorage.setItem('bb_users',JSON.stringify(users));
-  currentUser=user; localStorage.setItem('bb_current',em);
-  err.textContent=''; bootApp();
-}
-
-function doLogin(){
-  const em=document.getElementById('li-em').value.trim().toLowerCase();
-  const pw=document.getElementById('li-pw').value;
-  const rem=document.getElementById('li-rem').checked;
-  const err=document.getElementById('li-err');
-  if(!em||!em.includes('@')){err.textContent='❌ Please enter a valid email address.';shake('li-em');return;}
-  if(!pw){err.textContent='❌ Please enter your password.';shake('li-pw');return;}
-  const users=JSON.parse(localStorage.getItem('bb_users')||'{}');
-  if(!users[em]){err.textContent='❌ No account found with that email. Please sign up first.';shake('li-em');return;}
-  if(users[em].password!==pw){err.textContent='❌ Wrong password. Please try again or use Forgot password.';shake('li-pw');return;}
-  currentUser=users[em];
-  if(rem) localStorage.setItem('bb_current',em); else sessionStorage.setItem('bb_current',em);
-  err.textContent=''; bootApp();
-}
-
-function doLogout(){
-  localStorage.removeItem('bb_current'); sessionStorage.removeItem('bb_current');
-  currentUser=null; showScreen('auth-screen');
-  setTimeout(()=>switchTab('login'),100);
-}
-
-function showForgot(action){
-  const lf=document.getElementById('login-form');
-  const ff=document.getElementById('forgot-form');
-  const rf=document.getElementById('reset-form');
-  if(action==='back'){
-    rf.style.cssText='display:none;';
-    ff.style.cssText='display:none;';
-    lf.style.cssText='width:100%;display:flex;flex-direction:column;gap:11px;';
-    return;
-  }
-  lf.style.cssText='display:none;';
-  rf.style.cssText='display:none;';
-  ff.style.cssText='width:100%;display:flex;flex-direction:column;gap:11px;';
-  const pre=document.getElementById('li-em').value.trim();
-  if(pre) document.getElementById('fp-em').value=pre;
-}
-
-function sendResetCode(){
-  const em=document.getElementById('fp-em').value.trim().toLowerCase();
-  const err=document.getElementById('fp-err');
-  if(!em||!em.includes('@')){err.textContent='❌ Please enter a valid email address.';shake('fp-em');return;}
-  const users=JSON.parse(localStorage.getItem('bb_users')||'{}');
-  if(!users[em]){err.textContent='❌ No account found with that email address.';shake('fp-em');return;}
-  _resetCode=String(Math.floor(100000+Math.random()*900000));
-  _resetEmail=em;
-  localStorage.setItem('bb_reset',JSON.stringify({code:_resetCode,email:em,expires:Date.now()+15*60*1000}));
-  document.getElementById('reset-hint').innerHTML=`Code for <strong style="color:#fff">${em}</strong><br><span style="color:rgba(255,255,255,.35);font-size:11px;">Demo mode — code: </span><strong style="color:#1db8e8;letter-spacing:3px;">${_resetCode}</strong>`;
-  document.getElementById('forgot-form').style.cssText='display:none;';
-  document.getElementById('reset-form').style.cssText='width:100%;display:flex;flex-direction:column;gap:11px;';
-  err.textContent='';
-}
-
-function resendCode(){
-  document.getElementById('reset-form').style.cssText='display:none;';
-  document.getElementById('forgot-form').style.cssText='width:100%;display:flex;flex-direction:column;gap:11px;';
-}
-
-function doResetPassword(){
-  const code=document.getElementById('rp-code').value.trim();
-  const np=document.getElementById('rp-np').value;
-  const cf=document.getElementById('rp-cf').value;
-  const err=document.getElementById('rp-err');
-  const rd=JSON.parse(localStorage.getItem('bb_reset')||'{}');
-  if(!code||code.length!==6){err.textContent='❌ Please enter the 6-digit code.';shake('rp-code');return;}
-  if(!rd.code){err.textContent='❌ No reset request. Please start over.';return;}
-  if(Date.now()>rd.expires){err.textContent='❌ Code expired (15 min). Request a new one.';return;}
-  if(code!==rd.code){err.textContent='❌ Wrong code. Check and try again.';shake('rp-code');return;}
-  if(np.length<6){err.textContent='❌ New password must be at least 6 characters.';shake('rp-np');return;}
-  if(np!==cf){err.textContent='❌ Passwords do not match.';shake('rp-cf');return;}
-  const users=JSON.parse(localStorage.getItem('bb_users')||'{}');
-  users[rd.email].password=np; localStorage.setItem('bb_users',JSON.stringify(users));
-  localStorage.removeItem('bb_reset');
-  err.style.color='#4caf50'; err.textContent='✅ Password reset! Please sign in.';
-  setTimeout(()=>{err.style.color='';err.textContent='';switchTab('login');document.getElementById('li-em').value=rd.email;},2000);
-}
-
-(function seedAndCheck(){
-  // Seed the two real accounts (will not overwrite if already exist)
-  const users=JSON.parse(localStorage.getItem('bb_users')||'{}');
+// ── Seed built-in accounts on every load ──
+function seedAccounts(){
+  const users = JSON.parse(localStorage.getItem('bb_users') || '{}');
   if(!users['dwilker788@hotmail.com']){
-    users['dwilker788@hotmail.com']={
-      firstName:'D',lastName:'Wilker',email:'dwilker788@hotmail.com',
-      password:'honda11',city:'Hapeville',country:'USA',team:'',
-      createdAt:'2024-01-01T00:00:00.000Z'
+    users['dwilker788@hotmail.com'] = {
+      firstName:'D', lastName:'Wilker',
+      email:'dwilker788@hotmail.com', password:'honda11',
+      city:'Hapeville', country:'USA', team:'',
+      createdAt:'2024-01-01'
     };
   }
   if(!users['alexwilkerson28@gmail.com']){
-    users['alexwilkerson28@gmail.com']={
-      firstName:'Alex',lastName:'Wilkerson',email:'alexwilkerson28@gmail.com',
-      password:'cadilac11',city:'Hapeville',country:'USA',team:'',
-      createdAt:'2024-01-01T00:00:00.000Z'
+    users['alexwilkerson28@gmail.com'] = {
+      firstName:'Alex', lastName:'Wilkerson',
+      email:'alexwilkerson28@gmail.com', password:'cadilac11',
+      city:'Hapeville', country:'USA', team:'',
+      createdAt:'2024-01-01'
     };
   }
-  localStorage.setItem('bb_users',JSON.stringify(users));
+  localStorage.setItem('bb_users', JSON.stringify(users));
+}
+seedAccounts();
 
-  // Auto-login if session saved
-  const em=localStorage.getItem('bb_current')||sessionStorage.getItem('bb_current');
-  if(em&&users[em]){currentUser=users[em];bootApp();}
-})();
+// ── Show/hide auth panels ──
+function showPanel_auth(which){
+  var panels = ['signup-form','login-form','forgot-form','reset-form'];
+  panels.forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    if(id === which){
+      el.style.display = 'flex';
+      el.style.flexDirection = 'column';
+      el.style.gap = '11px';
+      el.style.width = '100%';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+
+function switchTab(tab){
+  // Update tab styling
+  var tabs = document.querySelectorAll('.auth-tab');
+  tabs.forEach(function(t, i){
+    t.classList.toggle('active', (i===0 && tab==='signup') || (i===1 && tab==='login'));
+  });
+  // Show correct panel
+  if(tab === 'signup') showPanel_auth('signup-form');
+  if(tab === 'login')  showPanel_auth('login-form');
+}
+
+// ── Run on page load ──
+window.addEventListener('DOMContentLoaded', function(){
+  // Hide all except signup
+  showPanel_auth('signup-form');
+  // Check if already logged in
+  var em = localStorage.getItem('bb_current') || sessionStorage.getItem('bb_current');
+  var users = JSON.parse(localStorage.getItem('bb_users') || '{}');
+  if(em && users[em]){
+    currentUser = users[em];
+    bootApp();
+  }
+});
+
+function shake(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.style.animation = 'none';
+  el.offsetHeight; // reflow
+  el.style.animation = 'shake .4s ease';
+}
+
+function setErr(id, msg){
+  var el = document.getElementById(id);
+  if(el){ el.textContent = msg; el.style.color = msg.startsWith('✅') ? '#4caf50' : '#ff6b6b'; }
+}
+
+function doSignUp(){
+  var fn = (document.getElementById('su-fn').value || '').trim();
+  var ln = (document.getElementById('su-ln').value || '').trim();
+  var em = (document.getElementById('su-em').value || '').trim().toLowerCase();
+  var pw = document.getElementById('su-pw').value || '';
+  var ct = (document.getElementById('su-ct').value || '').trim();
+
+  if(!fn){ setErr('su-err','❌ First name is required.'); shake('su-fn'); return; }
+  if(!ln){ setErr('su-err','❌ Last name is required.'); shake('su-ln'); return; }
+  if(!em || !em.includes('@') || !em.includes('.')){ setErr('su-err','❌ Please enter a valid email address.'); shake('su-em'); return; }
+  if(pw.length < 6){ setErr('su-err','❌ Password must be at least 6 characters.'); shake('su-pw'); return; }
+  if(!ct){ setErr('su-err','❌ Please enter your city.'); shake('su-ct'); return; }
+
+  var users = JSON.parse(localStorage.getItem('bb_users') || '{}');
+  if(users[em]){ setErr('su-err','❌ That email is already registered. Please Sign In instead.'); shake('su-em'); return; }
+
+  var user = { firstName:fn, lastName:ln, email:em, password:pw, city:ct, country:'', team:'', createdAt:new Date().toISOString() };
+  users[em] = user;
+  localStorage.setItem('bb_users', JSON.stringify(users));
+  currentUser = user;
+  localStorage.setItem('bb_current', em);
+  setErr('su-err', '');
+  bootApp();
+}
+
+function doLogin(){
+  var em = (document.getElementById('li-em').value || '').trim().toLowerCase();
+  var pw = document.getElementById('li-pw').value || '';
+  var rem = document.getElementById('li-rem') ? document.getElementById('li-rem').checked : true;
+
+  if(!em || !em.includes('@')){ setErr('li-err','❌ Please enter a valid email address.'); shake('li-em'); return; }
+  if(!pw){ setErr('li-err','❌ Please enter your password.'); shake('li-pw'); return; }
+
+  var users = JSON.parse(localStorage.getItem('bb_users') || '{}');
+
+  if(!users[em]){ setErr('li-err','❌ No account found with that email. Please Sign Up first.'); shake('li-em'); return; }
+  if(users[em].password !== pw){ setErr('li-err','❌ Wrong password. Please try again or use Forgot password.'); shake('li-pw'); return; }
+
+  currentUser = users[em];
+  if(rem) localStorage.setItem('bb_current', em);
+  else sessionStorage.setItem('bb_current', em);
+  setErr('li-err', '');
+  bootApp();
+}
+
+function doLogout(){
+  localStorage.removeItem('bb_current');
+  sessionStorage.removeItem('bb_current');
+  currentUser = null;
+  showScreen('auth-screen');
+  setTimeout(function(){ switchTab('login'); }, 150);
+}
+
+function showForgot(action){
+  if(action === 'back'){
+    showPanel_auth('login-form');
+    // also re-highlight login tab
+    document.querySelectorAll('.auth-tab').forEach(function(t,i){ t.classList.toggle('active', i===1); });
+    return;
+  }
+  var pre = (document.getElementById('li-em') ? document.getElementById('li-em').value : '').trim();
+  showPanel_auth('forgot-form');
+  if(pre && document.getElementById('fp-em')) document.getElementById('fp-em').value = pre;
+}
+
+function sendResetCode(){
+  var em = (document.getElementById('fp-em').value || '').trim().toLowerCase();
+  if(!em || !em.includes('@')){ setErr('fp-err','❌ Please enter a valid email address.'); shake('fp-em'); return; }
+  var users = JSON.parse(localStorage.getItem('bb_users') || '{}');
+  if(!users[em]){ setErr('fp-err','❌ No account found with that email.'); shake('fp-em'); return; }
+  _resetCode  = String(Math.floor(100000 + Math.random() * 900000));
+  _resetEmail = em;
+  localStorage.setItem('bb_reset', JSON.stringify({ code:_resetCode, email:em, expires:Date.now()+15*60*1000 }));
+  var hint = document.getElementById('reset-hint');
+  if(hint) hint.innerHTML = 'Code for <strong style="color:#fff">' + em + '</strong><br><span style="color:rgba(255,255,255,.35);font-size:11px;">Demo code: </span><strong style="color:#1db8e8;letter-spacing:3px;">' + _resetCode + '</strong>';
+  showPanel_auth('reset-form');
+  setErr('fp-err','');
+}
+
+function resendCode(){
+  showPanel_auth('forgot-form');
+}
+
+function doResetPassword(){
+  var code = (document.getElementById('rp-code').value || '').trim();
+  var np   = document.getElementById('rp-np').value || '';
+  var cf   = document.getElementById('rp-cf').value || '';
+  var rd   = JSON.parse(localStorage.getItem('bb_reset') || '{}');
+  if(!code || code.length !== 6){ setErr('rp-err','❌ Please enter the 6-digit code.'); shake('rp-code'); return; }
+  if(!rd.code){ setErr('rp-err','❌ No reset request found. Please start over.'); return; }
+  if(Date.now() > rd.expires){ setErr('rp-err','❌ Code expired (15 min). Please request a new one.'); return; }
+  if(code !== rd.code){ setErr('rp-err','❌ Wrong code. Please check and try again.'); shake('rp-code'); return; }
+  if(np.length < 6){ setErr('rp-err','❌ New password must be at least 6 characters.'); shake('rp-np'); return; }
+  if(np !== cf){ setErr('rp-err','❌ Passwords do not match.'); shake('rp-cf'); return; }
+  var users = JSON.parse(localStorage.getItem('bb_users') || '{}');
+  users[rd.email].password = np;
+  localStorage.setItem('bb_users', JSON.stringify(users));
+  localStorage.removeItem('bb_reset');
+  setErr('rp-err','✅ Password reset! Please sign in.');
+  setTimeout(function(){
+    setErr('rp-err','');
+    switchTab('login');
+    if(document.getElementById('li-em')) document.getElementById('li-em').value = rd.email;
+  }, 2000);
+}
 
 /* ══════════════════════════════
    CONFIG
