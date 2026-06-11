@@ -55,11 +55,11 @@
     .gear-btn:hover{transform:rotate(45deg);}
 
     /* tiles */
-    .tile-grid{display:grid;grid-template-columns:52vw 24vw 24vw;grid-template-rows:28vw 28vw;gap:2px;width:100vw;max-width:700px;}
+    .tile-grid{display:grid;grid-template-columns:46vw 22vw 22vw;grid-template-rows:24vw 24vw;gap:2px;width:90vw;max-width:600px;}
     .tile{display:flex;flex-direction:column;justify-content:flex-end;padding:10px 12px;cursor:pointer;color:#fff;position:relative;overflow:hidden;transition:filter .12s,transform .1s;-webkit-tap-highlight-color:transparent;}
     .tile:active{transform:scale(.97);filter:brightness(1.3);}
     .tile-icon-area{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);}
-    .tile-icon-area svg{width:min(52px,10vw);height:min(52px,10vw);}
+    .tile-icon-area svg{width:min(42px,8vw);height:min(42px,8vw);}
     .tile-label{font-size:clamp(11px,2.5vw,14px);font-weight:400;line-height:1.25;z-index:1;}
     .t-alarm{grid-row:span 2;}.t-alarm .tile-icon-area{top:38%;}.t-alarm .tile-label{font-size:clamp(13px,3vw,16px);}
     .sport-day{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.5px;}
@@ -195,7 +195,7 @@
   </div>
 
   <!-- SIGN IN -->
-  <div id="login-form" style="width:100%;display:none;flex-direction:column;gap:11px;">
+  <div id="login-form" style="display:none;">
     <input class="auth-input" id="li-em" type="email" placeholder="Email Address" autocomplete="email"/>
     <input class="auth-input" id="li-pw" type="password" placeholder="Password" autocomplete="current-password"/>
     <div class="remember-row">
@@ -210,7 +210,7 @@
   </div>
 
   <!-- FORGOT — Step 1 -->
-  <div id="forgot-form" style="width:100%;display:none;flex-direction:column;gap:11px;">
+  <div id="forgot-form" style="display:none;">
     <div style="text-align:center;font-size:13px;color:rgba(255,255,255,.5);line-height:1.6;">Enter your email and we'll generate a reset code.</div>
     <input class="auth-input" id="fp-em" type="email" placeholder="Your Email Address"/>
     <div class="auth-error" id="fp-err"></div>
@@ -219,7 +219,7 @@
   </div>
 
   <!-- FORGOT — Step 2 -->
-  <div id="reset-form" style="width:100%;display:none;flex-direction:column;gap:11px;">
+  <div id="reset-form" style="display:none;">
     <div style="background:rgba(29,184,232,.1);border:1px solid rgba(29,184,232,.28);border-radius:8px;padding:12px 14px;text-align:center;">
       <div style="font-size:13px;color:#1db8e8;font-weight:600;margin-bottom:4px;">Code Sent!</div>
       <div id="reset-hint" style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;"></div>
@@ -704,10 +704,14 @@ let _resetCode='', _resetEmail='';
 
 function switchTab(tab){
   document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='signup')||(i===1&&tab==='login')));
-  document.getElementById('signup-form').style.display=tab==='signup'?'flex':'none';
-  document.getElementById('login-form').style.display=tab==='login'?'flex':'none';
-  document.getElementById('forgot-form').style.display='none';
-  document.getElementById('reset-form').style.display='none';
+  const sf=document.getElementById('signup-form');
+  const lf=document.getElementById('login-form');
+  const ff=document.getElementById('forgot-form');
+  const rf=document.getElementById('reset-form');
+  sf.style.cssText = tab==='signup' ? 'width:100%;display:flex;flex-direction:column;gap:11px;' : 'display:none;';
+  lf.style.cssText = tab==='login'  ? 'width:100%;display:flex;flex-direction:column;gap:11px;' : 'display:none;';
+  ff.style.cssText = 'display:none;';
+  rf.style.cssText = 'display:none;';
 }
 
 function shake(id){const el=document.getElementById(id);if(!el)return;el.style.animation='none';el.offsetHeight;el.style.animation='shake .4s ease';}
@@ -749,18 +753,23 @@ function doLogin(){
 
 function doLogout(){
   localStorage.removeItem('bb_current'); sessionStorage.removeItem('bb_current');
-  currentUser=null; showScreen('auth-screen'); switchTab('login');
+  currentUser=null; showScreen('auth-screen');
+  setTimeout(()=>switchTab('login'),100);
 }
 
 function showForgot(action){
+  const lf=document.getElementById('login-form');
+  const ff=document.getElementById('forgot-form');
+  const rf=document.getElementById('reset-form');
   if(action==='back'){
-    document.getElementById('forgot-form').style.display='none';
-    document.getElementById('reset-form').style.display='none';
-    document.getElementById('login-form').style.display='flex';
+    rf.style.cssText='display:none;';
+    ff.style.cssText='display:none;';
+    lf.style.cssText='width:100%;display:flex;flex-direction:column;gap:11px;';
     return;
   }
-  document.getElementById('login-form').style.display='none';
-  document.getElementById('forgot-form').style.display='flex';
+  lf.style.cssText='display:none;';
+  rf.style.cssText='display:none;';
+  ff.style.cssText='width:100%;display:flex;flex-direction:column;gap:11px;';
   const pre=document.getElementById('li-em').value.trim();
   if(pre) document.getElementById('fp-em').value=pre;
 }
@@ -775,12 +784,15 @@ function sendResetCode(){
   _resetEmail=em;
   localStorage.setItem('bb_reset',JSON.stringify({code:_resetCode,email:em,expires:Date.now()+15*60*1000}));
   document.getElementById('reset-hint').innerHTML=`Code for <strong style="color:#fff">${em}</strong><br><span style="color:rgba(255,255,255,.35);font-size:11px;">Demo mode — code: </span><strong style="color:#1db8e8;letter-spacing:3px;">${_resetCode}</strong>`;
-  document.getElementById('forgot-form').style.display='none';
-  document.getElementById('reset-form').style.display='flex';
+  document.getElementById('forgot-form').style.cssText='display:none;';
+  document.getElementById('reset-form').style.cssText='width:100%;display:flex;flex-direction:column;gap:11px;';
   err.textContent='';
 }
 
-function resendCode(){document.getElementById('reset-form').style.display='none';document.getElementById('forgot-form').style.display='flex';}
+function resendCode(){
+  document.getElementById('reset-form').style.cssText='display:none;';
+  document.getElementById('forgot-form').style.cssText='width:100%;display:flex;flex-direction:column;gap:11px;';
+}
 
 function doResetPassword(){
   const code=document.getElementById('rp-code').value.trim();
@@ -798,12 +810,30 @@ function doResetPassword(){
   users[rd.email].password=np; localStorage.setItem('bb_users',JSON.stringify(users));
   localStorage.removeItem('bb_reset');
   err.style.color='#4caf50'; err.textContent='✅ Password reset! Please sign in.';
-  setTimeout(()=>{err.style.color='';err.textContent='';document.getElementById('reset-form').style.display='none';switchTab('login');document.getElementById('li-em').value=rd.email;},2000);
+  setTimeout(()=>{err.style.color='';err.textContent='';switchTab('login');document.getElementById('li-em').value=rd.email;},2000);
 }
 
-(function checkSession(){
-  const em=localStorage.getItem('bb_current')||sessionStorage.getItem('bb_current');
+(function seedAndCheck(){
+  // Seed the two real accounts (will not overwrite if already exist)
   const users=JSON.parse(localStorage.getItem('bb_users')||'{}');
+  if(!users['dwilker788@hotmail.com']){
+    users['dwilker788@hotmail.com']={
+      firstName:'D',lastName:'Wilker',email:'dwilker788@hotmail.com',
+      password:'honda11',city:'Hapeville',country:'USA',team:'',
+      createdAt:'2024-01-01T00:00:00.000Z'
+    };
+  }
+  if(!users['alexwilkerson28@gmail.com']){
+    users['alexwilkerson28@gmail.com']={
+      firstName:'Alex',lastName:'Wilkerson',email:'alexwilkerson28@gmail.com',
+      password:'cadilac11',city:'Hapeville',country:'USA',team:'',
+      createdAt:'2024-01-01T00:00:00.000Z'
+    };
+  }
+  localStorage.setItem('bb_users',JSON.stringify(users));
+
+  // Auto-login if session saved
+  const em=localStorage.getItem('bb_current')||sessionStorage.getItem('bb_current');
   if(em&&users[em]){currentUser=users[em];bootApp();}
 })();
 
