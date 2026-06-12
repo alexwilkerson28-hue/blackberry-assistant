@@ -44,7 +44,7 @@
 
     /* ═══ GRID SCREEN ═══ */
     #grid-screen{background:radial-gradient(ellipse at 50% 30%,#0d0d14 0%,#000 75%);}
-    .greeting-bar{width:74vw;max-width:480px;padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .greeting-bar{width:358px;padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
     .greeting-left{display:flex;align-items:center;gap:8px;}
     .bb-logo-sm svg{width:26px;height:26px;}
     .greeting-text{font-size:clamp(12px,3vw,15px);font-weight:300;color:rgba(255,255,255,.8);}
@@ -55,27 +55,27 @@
     .gear-btn:hover{transform:rotate(45deg);}
 
     /* tiles */
-    .tile-grid{display:grid;grid-template-columns:38vw 18vw 18vw;grid-template-rows:18vw 18vw;gap:2px;width:74vw;max-width:480px;}
+    .tile-grid{display:grid;grid-template-columns:180px 88px 88px;grid-template-rows:100px 100px;gap:2px;width:358px;}
     .tile{display:flex;flex-direction:column;justify-content:flex-end;padding:10px 12px;cursor:pointer;color:#fff;position:relative;overflow:hidden;transition:filter .12s,transform .1s;-webkit-tap-highlight-color:transparent;}
     .tile:active{transform:scale(.97);filter:brightness(1.3);}
     .tile-icon-area{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);}
-    .tile-icon-area svg{width:min(28px,5.5vw);height:min(28px,5.5vw);}
-    .tile-label{font-size:clamp(9px,1.8vw,11px);font-weight:400;line-height:1.2;z-index:1;}
-    .t-alarm{grid-row:span 2;}.t-alarm .tile-icon-area{top:38%;}.t-alarm .tile-label{font-size:clamp(10px,2vw,12px);}
+    .tile-icon-area svg{width:24px;height:24px;}
+    .tile-label{font-size:10px;font-weight:400;line-height:1.2;z-index:1;}
+    .t-alarm{grid-row:span 2;}.t-alarm .tile-icon-area{top:40%;}.t-alarm .tile-label{font-size:11px;}
     .sport-day{font-size:8px;opacity:.6;text-transform:uppercase;letter-spacing:.3px;}
-    .sport-name{font-size:clamp(8px,1.8vw,10px);font-weight:600;line-height:1.2;}
+    .sport-name{font-size:10px;font-weight:600;line-height:1.2;}
     .sport-league{font-size:8px;opacity:.65;}
 
     /* search */
-    .search-row{width:74vw;max-width:480px;background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.15);padding:10px 14px;display:flex;align-items:center;gap:8px;position:relative;flex-shrink:0;}
+    .search-row{width:358px;background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.15);padding:10px 14px;display:flex;align-items:center;gap:8px;position:relative;flex-shrink:0;}
     .search-ph{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:clamp(14px,3.5vw,17px);font-style:italic;font-weight:300;color:rgba(255,255,255,.32);white-space:nowrap;pointer-events:none;}
     .search-row input{flex:1;background:transparent;border:none;outline:none;font-family:inherit;font-size:clamp(14px,3.5vw,17px);font-style:italic;font-weight:300;color:rgba(255,255,255,.85);caret-color:#1db8e8;-webkit-user-select:text;user-select:text;}
     .search-row input:focus{font-style:normal;}
     .search-go{background:#1db8e8;border:none;color:#000;cursor:pointer;font-size:16px;font-weight:700;padding:6px 12px;border-radius:4px;}
-    .mic-wrap{margin-top:clamp(14px,3vw,28px);}
-    .mic-btn{width:clamp(48px,9vw,58px);height:clamp(48px,9vw,58px);border-radius:50%;border:2px solid rgba(255,255,255,.6);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .mic-wrap{margin-top:18px;}
+    .mic-btn{width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,.6);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;}
     .mic-btn:active{transform:scale(.95);}
-    .mic-btn svg{width:clamp(16px,4vw,20px);height:clamp(16px,4vw,20px);fill:rgba(255,255,255,.85);}
+    .mic-btn svg{width:18px;height:18px;fill:rgba(255,255,255,.85);}
     .info-btn{position:absolute;bottom:14px;right:14px;width:32px;height:32px;border-radius:6px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.05);color:rgba(255,255,255,.45);font-size:15px;font-style:italic;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 
     /* ═══ RESULT SCREEN ═══ */
@@ -1061,11 +1061,13 @@ function stopWave(){if(waveRAF){cancelAnimationFrame(waveRAF);waveRAF=null;}}
 function openMic(){
   aiHistory=[];
   document.getElementById('aiChat').innerHTML='';
-  document.getElementById('micStatus').textContent='Tap to speak';
+  document.getElementById('micStatus').textContent='Starting…';
   showScreen('mic-screen');
   if(cfg.animateWave)animateWave();
-  const g=`Hello${currentUser?' '+currentUser.firstName:''}! I'm listening. What can I help you with?`;
-  addMsg(g,'assistant'); speak(g);
+  var g='Hello'+(currentUser?' '+currentUser.firstName:'')+'! Tap the orb to speak.';
+  addMsg(g,'assistant');
+  document.getElementById('micStatus').textContent='Tap to speak';
+  // Don't auto-speak greeting — prevents mic hearing it immediately
 }
 function closeMic(){showScreen('grid-screen');window.speechSynthesis.cancel();if(recog){try{recog.stop();}catch(e){}}stopWave();}
 
@@ -1077,29 +1079,107 @@ function addMsg(text,role){
 }
 
 function startListening(){
+  // Stop recognition first — prevents hearing its own voice
+  if(recog){try{recog.stop();}catch(e){}}
+  recog=null;
+
+  // Also stop any ongoing speech before listening
+  window.speechSynthesis.cancel();
+
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){document.getElementById('micStatus').textContent='Use Chrome browser';return;}
-  if(recog){try{recog.stop();}catch(e){}}
-  recog=new SR(); recog.lang=cfg.lang||'en-US'; recog.interimResults=true; recog.continuous=false;
+
+  recog=new SR();
+  recog.lang=cfg.lang||'en-US';
+  recog.interimResults=true;
+  recog.continuous=false;
   document.getElementById('micStatus').textContent='Listening…';
-  recog.onresult=e=>{
-    let final='',interim='';
-    for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)final+=t;else interim+=t;}
-    if(interim)document.getElementById('micStatus').textContent=interim;
+
+  recog.onresult=function(e){
+    var final='', interim='';
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      var t=e.results[i][0].transcript;
+      if(e.results[i].isFinal) final+=t; else interim+=t;
+    }
+    if(interim) document.getElementById('micStatus').textContent=interim;
     if(final){
+      // Stop listening immediately once we have final result
+      try{recog.stop();}catch(x){}
       document.getElementById('micStatus').textContent='';
-      addMsg(final,'user'); aiHistory.push({role:'user',content:final});
-      const th=Object.assign(document.createElement('div'),{className:'ai-msg thinking',textContent:'…'});
+      addMsg(final,'user');
+      aiHistory.push({role:'user',content:final});
+      var th=document.createElement('div');
+      th.className='ai-msg thinking'; th.textContent='…';
       document.getElementById('aiChat').appendChild(th);
-      askAI(aiHistory,reply=>{
-        th.remove(); addMsg(reply,'assistant'); aiHistory.push({role:'assistant',content:reply}); speak(reply);
-        setTimeout(()=>{if(!document.getElementById('mic-screen').classList.contains('hidden'))document.getElementById('micStatus').textContent='Tap to speak';},800);
+      document.getElementById('aiChat').scrollTop=document.getElementById('aiChat').scrollHeight;
+
+      askAI(aiHistory,function(reply){
+        th.remove();
+        addMsg(reply,'assistant');
+        aiHistory.push({role:'assistant',content:reply});
+
+        // Speak — and only restart listening AFTER speech is fully done
+        speakThenListen(reply);
       });
     }
   };
-  recog.onend=()=>{if(!document.getElementById('mic-screen').classList.contains('hidden'))document.getElementById('micStatus').textContent='Tap to speak';};
-  recog.onerror=()=>{document.getElementById('micStatus').textContent='Tap to try again';};
+
+  recog.onend=function(){
+    if(!document.getElementById('mic-screen').classList.contains('hidden')){
+      // Only update status if we are not about to speak
+      if(!window.speechSynthesis.speaking){
+        document.getElementById('micStatus').textContent='Tap to speak';
+      }
+    }
+  };
+
+  recog.onerror=function(e){
+    if(e.error!=='aborted'){
+      document.getElementById('micStatus').textContent='Tap to try again';
+    }
+  };
+
   recog.start();
+}
+
+function speakThenListen(txt){
+  // Stop mic completely while speaking
+  if(recog){try{recog.stop();}catch(e){}}
+  recog=null;
+
+  document.getElementById('micStatus').textContent='Speaking…';
+
+  if(!cfg.speakResults||!txt){
+    // No speech — just wait a moment then allow tap
+    setTimeout(function(){
+      if(!document.getElementById('mic-screen').classList.contains('hidden')){
+        document.getElementById('micStatus').textContent='Tap to speak';
+      }
+    },400);
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(txt.replace(/<[^>]+>/g,''));
+  u.voice=chosenVoice||femaleVoice;
+  u.rate=cfg.speed||0.97;
+  u.pitch=getPitch();
+  u.lang=cfg.lang||'en-US';
+
+  u.onend=function(){
+    // Speech finished — now safe to listen again
+    if(!document.getElementById('mic-screen').classList.contains('hidden')){
+      document.getElementById('micStatus').textContent='Tap to speak';
+    }
+  };
+
+  u.onerror=function(){
+    if(!document.getElementById('mic-screen').classList.contains('hidden')){
+      document.getElementById('micStatus').textContent='Tap to speak';
+    }
+  };
+
+  window.speechSynthesis.speak(u);
 }
 
 /* ══════════════════════════════
