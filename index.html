@@ -44,7 +44,7 @@
 
     /* ═══ GRID SCREEN ═══ */
     #grid-screen{background:radial-gradient(ellipse at 50% 30%,#0d0d14 0%,#000 75%);}
-    .greeting-bar{width:100%;max-width:700px;padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .greeting-bar{width:74vw;max-width:480px;padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
     .greeting-left{display:flex;align-items:center;gap:8px;}
     .bb-logo-sm svg{width:26px;height:26px;}
     .greeting-text{font-size:clamp(12px,3vw,15px);font-weight:300;color:rgba(255,255,255,.8);}
@@ -55,27 +55,27 @@
     .gear-btn:hover{transform:rotate(45deg);}
 
     /* tiles */
-    .tile-grid{display:grid;grid-template-columns:46vw 22vw 22vw;grid-template-rows:24vw 24vw;gap:2px;width:90vw;max-width:600px;}
+    .tile-grid{display:grid;grid-template-columns:38vw 18vw 18vw;grid-template-rows:18vw 18vw;gap:2px;width:74vw;max-width:480px;}
     .tile{display:flex;flex-direction:column;justify-content:flex-end;padding:10px 12px;cursor:pointer;color:#fff;position:relative;overflow:hidden;transition:filter .12s,transform .1s;-webkit-tap-highlight-color:transparent;}
     .tile:active{transform:scale(.97);filter:brightness(1.3);}
     .tile-icon-area{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);}
-    .tile-icon-area svg{width:min(42px,8vw);height:min(42px,8vw);}
-    .tile-label{font-size:clamp(11px,2.5vw,14px);font-weight:400;line-height:1.25;z-index:1;}
-    .t-alarm{grid-row:span 2;}.t-alarm .tile-icon-area{top:38%;}.t-alarm .tile-label{font-size:clamp(13px,3vw,16px);}
-    .sport-day{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.5px;}
-    .sport-name{font-size:clamp(11px,2.5vw,13px);font-weight:600;line-height:1.2;}
-    .sport-league{font-size:10px;opacity:.65;}
+    .tile-icon-area svg{width:min(28px,5.5vw);height:min(28px,5.5vw);}
+    .tile-label{font-size:clamp(9px,1.8vw,11px);font-weight:400;line-height:1.2;z-index:1;}
+    .t-alarm{grid-row:span 2;}.t-alarm .tile-icon-area{top:38%;}.t-alarm .tile-label{font-size:clamp(10px,2vw,12px);}
+    .sport-day{font-size:8px;opacity:.6;text-transform:uppercase;letter-spacing:.3px;}
+    .sport-name{font-size:clamp(8px,1.8vw,10px);font-weight:600;line-height:1.2;}
+    .sport-league{font-size:8px;opacity:.65;}
 
     /* search */
-    .search-row{width:100vw;max-width:700px;background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.15);padding:10px 14px;display:flex;align-items:center;gap:8px;position:relative;flex-shrink:0;}
+    .search-row{width:74vw;max-width:480px;background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.15);padding:10px 14px;display:flex;align-items:center;gap:8px;position:relative;flex-shrink:0;}
     .search-ph{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:clamp(14px,3.5vw,17px);font-style:italic;font-weight:300;color:rgba(255,255,255,.32);white-space:nowrap;pointer-events:none;}
     .search-row input{flex:1;background:transparent;border:none;outline:none;font-family:inherit;font-size:clamp(14px,3.5vw,17px);font-style:italic;font-weight:300;color:rgba(255,255,255,.85);caret-color:#1db8e8;-webkit-user-select:text;user-select:text;}
     .search-row input:focus{font-style:normal;}
     .search-go{background:#1db8e8;border:none;color:#000;cursor:pointer;font-size:16px;font-weight:700;padding:6px 12px;border-radius:4px;}
-    .mic-wrap{margin-top:clamp(28px,5vw,55px);}
-    .mic-btn{width:clamp(58px,12vw,70px);height:clamp(58px,12vw,70px);border-radius:50%;border:2px solid rgba(255,255,255,.6);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .mic-wrap{margin-top:clamp(14px,3vw,28px);}
+    .mic-btn{width:clamp(48px,9vw,58px);height:clamp(48px,9vw,58px);border-radius:50%;border:2px solid rgba(255,255,255,.6);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;}
     .mic-btn:active{transform:scale(.95);}
-    .mic-btn svg{width:clamp(20px,5vw,26px);height:clamp(20px,5vw,26px);fill:rgba(255,255,255,.85);}
+    .mic-btn svg{width:clamp(16px,4vw,20px);height:clamp(16px,4vw,20px);fill:rgba(255,255,255,.85);}
     .info-btn{position:absolute;bottom:14px;right:14px;width:32px;height:32px;border-radius:6px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.05);color:rgba(255,255,255,.45);font-size:15px;font-style:italic;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 
     /* ═══ RESULT SCREEN ═══ */
@@ -260,7 +260,7 @@
       <div class="greeting-text" id="greetingText">Good morning</div>
     </div>
     <div class="hdr-btns">
-      <button class="hdr-btn" onclick="showPanel('tutorial-screen')" title="How to use">?</button>
+      <button class="hdr-btn" onclick="showPanel('settings-screen');sTab(5)" title="How to use">?</button>
       <button class="hdr-btn gear-btn" onclick="showPanel('settings-screen')" title="Settings">⚙</button>
     </div>
   </div>
@@ -338,7 +338,7 @@
       <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-6 9a6 6 0 0 0 12 0h2a8 8 0 0 1-7 7.93V21h-2v-3.07A8 8 0 0 1 4 10h2z"/></svg>
     </button>
   </div>
-  <div class="info-btn" onclick="showPanel('tutorial-screen')">i</div>
+  <div class="info-btn" onclick="showPanel('settings-screen');sTab(5)">i</div>
 </div>
 
 
@@ -378,27 +378,27 @@
 ════════════════════════════════ -->
 <div class="screen hidden full-screen-panel" id="settings-screen">
   <div class="topbar">
-    <button class="back-btn" onclick="showScreen('grid-screen')">‹</button>
-    <div class="topbar-title">⚙ Settings</div>
+    <button class="back-btn" onclick="showScreen('grid-screen')">&#8249;</button>
+    <div class="topbar-title">Settings</div>
   </div>
-  <!-- tabs -->
-  <div class="nav-tabs" style="flex-shrink:0;padding:0 4%;">
+  <div class="nav-tabs" style="flex-shrink:0;padding:0 4%;overflow-x:auto;">
     <div class="nav-tab active" onclick="sTab(0)">Profile</div>
     <div class="nav-tab" onclick="sTab(1)">Location</div>
     <div class="nav-tab" onclick="sTab(2)">Voice</div>
     <div class="nav-tab" onclick="sTab(3)">Tiles</div>
     <div class="nav-tab" onclick="sTab(4)">App</div>
+    <div class="nav-tab" onclick="sTab(5)">How To Use</div>
   </div>
   <div class="panel-scroll">
   <div class="panel-inner">
 
-    <!-- Tab 0: Profile -->
+    <!-- ── Profile ── -->
     <div class="s-tab-panel" id="stab-0">
       <div class="s-section">
         <div class="s-title">Your Profile</div>
         <div class="s-row"><label>First Name</label><input class="s-input" id="s-fn" type="text"/></div>
         <div class="s-row"><label>Last Name</label><input class="s-input" id="s-ln" type="text"/></div>
-        <div class="s-row"><label>Email</label><input class="s-input" id="s-em" type="email" disabled style="opacity:.4;"/></div>
+        <div class="s-row"><label>Email</label><input class="s-input" id="s-em" type="email" disabled style="opacity:.35;"/></div>
       </div>
       <div class="s-section">
         <div class="s-title">Change Password</div>
@@ -408,7 +408,7 @@
       </div>
     </div>
 
-    <!-- Tab 1: Location -->
+    <!-- ── Location ── -->
     <div class="s-tab-panel hidden" id="stab-1">
       <div class="s-section">
         <div class="s-title">Your Location</div>
@@ -417,26 +417,27 @@
         <div class="s-row"><label>Favourite Team</label><input class="s-input" id="s-team" type="text" placeholder="e.g. Cowboys"/></div>
       </div>
       <div class="s-section">
-        <div class="s-title">Auto-Detect Location</div>
-        <div class="s-row"><label>Use GPS location</label><div class="toggle" id="tog-gps" onclick="this.classList.toggle('on');if(this.classList.contains('on'))getGPS()"></div></div>
-        <div style="padding:8px 14px;font-size:12px;color:rgba(255,255,255,.35);line-height:1.6;" id="gps-status">GPS not enabled. Enable above to auto-detect your city.</div>
+        <div class="s-title">Auto-Detect via GPS</div>
+        <div class="s-row"><label>Use my GPS location</label><div class="toggle" id="tog-gps" onclick="this.classList.toggle('on');if(this.classList.contains('on'))getGPS()"></div></div>
+        <div style="padding:8px 14px;font-size:12px;color:rgba(255,255,255,.3);line-height:1.6;" id="gps-status">Enable GPS above to auto-detect your city.</div>
       </div>
     </div>
 
-    <!-- Tab 2: Voice -->
+    <!-- ── Voice ── -->
     <div class="s-tab-panel hidden" id="stab-2">
       <div class="s-section">
         <div class="s-title">Voice Type</div>
-        <div class="s-row"><label>Voice</label>
-          <select class="s-select" id="s-voice-type" onchange="previewVoice()">
+        <div class="s-row">
+          <label>Voice</label>
+          <select class="s-select" id="s-voice-type">
             <option value="female">Female (Woman)</option>
             <option value="male">Male (Man)</option>
-            <option value="girl">Girl (Young Female)</option>
-            <option value="boy">Boy (Young Male)</option>
+            <option value="girl">Girl (Young / High)</option>
+            <option value="boy">Boy (Young / High)</option>
           </select>
         </div>
-        <div class="s-row"><label>Speed</label><input type="range" class="s-range" id="s-speed" min="0.5" max="1.6" step="0.1" value="0.97" oninput="document.getElementById('s-speed-val').textContent=parseFloat(this.value).toFixed(1)"/><span id="s-speed-val" style="font-size:12px;opacity:.5;width:24px;">1.0</span></div>
-        <div class="s-row"><label>Pitch</label><input type="range" class="s-range" id="s-pitch" min="0.5" max="2.0" step="0.1" value="1.1" oninput="document.getElementById('s-pitch-val').textContent=parseFloat(this.value).toFixed(1)"/><span id="s-pitch-val" style="font-size:12px;opacity:.5;width:24px;">1.1</span></div>
+        <div class="s-row"><label>Speed</label><input type="range" class="s-range" id="s-speed" min="0.5" max="1.6" step="0.1" value="0.97" oninput="document.getElementById('spv').textContent=parseFloat(this.value).toFixed(1)"/><span id="spv" style="font-size:12px;opacity:.5;width:28px;">1.0</span></div>
+        <div class="s-row"><label>Pitch</label><input type="range" class="s-range" id="s-pitch" min="0.5" max="2.0" step="0.1" value="1.1" oninput="document.getElementById('ptv').textContent=parseFloat(this.value).toFixed(1)"/><span id="ptv" style="font-size:12px;opacity:.5;width:28px;">1.1</span></div>
         <div class="s-row"><label>Language</label>
           <select class="s-select" id="s-lang">
             <option value="en-US">English (US)</option>
@@ -448,16 +449,19 @@
         </div>
       </div>
       <div class="s-section">
-        <div class="s-title">Preview</div>
-        <div class="s-row" style="cursor:pointer;" onclick="previewVoice()"><label>🔊 Tap to hear selected voice</label><span style="font-size:18px;">▶</span></div>
+        <div class="s-title">Preview Voice</div>
+        <div class="s-row" style="cursor:pointer;" onclick="previewVoice()">
+          <label>&#128266; Tap to hear the selected voice</label>
+          <span style="font-size:18px;">&#9654;</span>
+        </div>
       </div>
     </div>
 
-    <!-- Tab 3: Tile Colours -->
+    <!-- ── Tiles ── -->
     <div class="s-tab-panel hidden" id="stab-3">
       <div class="s-section">
         <div class="s-title">Tile Colours</div>
-        <div class="s-row"><label>Alarm tile</label><input type="color" class="s-color" id="col-alarm" value="#7a9a2a"/></div>
+        <div class="s-row"><label>Alarm</label><input type="color" class="s-color" id="col-alarm" value="#7a9a2a"/></div>
         <div class="s-row"><label>Find Location</label><input type="color" class="s-color" id="col-find" value="#5a8a2a"/></div>
         <div class="s-row"><label>Search</label><input type="color" class="s-color" id="col-search" value="#1877c8"/></div>
         <div class="s-row"><label>Sports</label><input type="color" class="s-color" id="col-sports" value="#c03030"/></div>
@@ -472,7 +476,7 @@
       </div>
     </div>
 
-    <!-- Tab 4: App Settings -->
+    <!-- ── App ── -->
     <div class="s-tab-panel hidden" id="stab-4">
       <div class="s-section">
         <div class="s-title">App Preferences</div>
@@ -485,7 +489,7 @@
         <div class="s-title">Like This App?</div>
         <div style="padding:4px 0 12px;display:flex;gap:10px;align-items:center;">
           <div class="like-btn" id="likeBtn" onclick="toggleLike()">
-            <span id="likeIcon">🤍</span>
+            <span id="likeIcon">&#129293;</span>
             <span id="likeCount">0</span> likes
           </div>
           <div style="font-size:12px;color:rgba(255,255,255,.3);">Tap to like the app!</div>
@@ -493,7 +497,87 @@
       </div>
       <div class="s-section">
         <div class="s-title">Account</div>
-        <div class="s-row"><label>Signed in as</label><span id="s-email-disp" style="font-size:12px;color:rgba(255,255,255,.4);"></span></div>
+        <div class="s-row"><label>Signed in as</label><span id="s-email-disp" style="font-size:12px;color:rgba(255,255,255,.35);word-break:break-all;"></span></div>
+      </div>
+    </div>
+
+    <!-- ── How To Use ── -->
+    <div class="s-tab-panel hidden" id="stab-5">
+      <div class="tut-card">
+        <div style="font-size:14px;font-weight:600;color:#1db8e8;margin-bottom:12px;">Welcome to BlackBerry Assistant Pro!</div>
+
+        <div class="tut-step">
+          <div class="tut-num">1</div>
+          <div class="tut-text">
+            <div class="tut-title">Sign Up or Sign In</div>
+            <div class="tut-desc">Create a free account with your name, email, city and password. Next time just sign in with your email and password.</div>
+          </div>
+        </div>
+
+        <div class="tut-step">
+          <div class="tut-num">2</div>
+          <div class="tut-text">
+            <div class="tut-title">Tap the Coloured Tiles</div>
+            <div class="tut-desc">Each tile opens a feature inside the app. Nothing opens a new browser tab — everything stays right here.</div>
+            <div class="tut-say">&#9632; Green = Alarm &amp; Find Location</div>
+            <div class="tut-say" style="margin-top:4px;">&#9632; Blue = Search anything with AI</div>
+            <div class="tut-say" style="margin-top:4px;">&#9632; Red = Sports &amp; Tickets</div>
+          </div>
+        </div>
+
+        <div class="tut-step">
+          <div class="tut-num">3</div>
+          <div class="tut-text">
+            <div class="tut-title">Type in the Search Bar</div>
+            <div class="tut-desc">Type any question and press the arrow button or press Enter. The AI will answer it right inside the app with voice.</div>
+            <div class="tut-say">Try: "What is the weather today?"</div>
+          </div>
+        </div>
+
+        <div class="tut-step">
+          <div class="tut-num">4</div>
+          <div class="tut-text">
+            <div class="tut-title">Use the Mic for Voice Conversations</div>
+            <div class="tut-desc">Tap the circle mic button at the bottom. The blue orb screen appears. Tap the orb to speak. The assistant listens, answers, and speaks back. You can keep talking back and forth!</div>
+            <div class="tut-say">Say: "What sports games are on today?"</div>
+            <div class="tut-say" style="margin-top:4px;">Say: "Tell me a joke"</div>
+            <div class="tut-say" style="margin-top:4px;">Say: "What time is it?"</div>
+            <div class="tut-say" style="margin-top:4px;">Say: "Find me a restaurant"</div>
+          </div>
+        </div>
+
+        <div class="tut-step">
+          <div class="tut-num">5</div>
+          <div class="tut-text">
+            <div class="tut-title">Sports Changes Every Day</div>
+            <div class="tut-desc">The sports tile automatically shows a different sport every day of the week — NFL on Sundays and Mondays, NBA on Tuesdays and Fridays, MLB on Wednesdays, College Football on Saturdays.</div>
+          </div>
+        </div>
+
+        <div class="tut-step">
+          <div class="tut-num">6</div>
+          <div class="tut-text">
+            <div class="tut-title">Customise Everything in Settings</div>
+            <div class="tut-desc">Use the tabs above to change your city, voice type (female, male, girl, boy), tile colours and labels, and app preferences. Press Save Settings when done.</div>
+          </div>
+        </div>
+
+        <div class="tut-step">
+          <div class="tut-num">7</div>
+          <div class="tut-text">
+            <div class="tut-title">Go Back from Any Screen</div>
+            <div class="tut-desc">The large &#8249; back button at the top left of every screen always takes you back to the home screen.</div>
+          </div>
+        </div>
+
+        <div class="tut-step">
+          <div class="tut-num">8</div>
+          <div class="tut-text">
+            <div class="tut-title">Publish to Google Play Store</div>
+            <div class="tut-desc">1. Make sure all 5 files are on GitHub (index.html, manifest.json, sw.js, icon-192.png, icon-512.png). 2. Go to pwabuilder.com and paste your GitHub Pages URL. 3. Click Package for Stores and choose Android. 4. Go to play.google.com/console and pay the $25 one-time fee. 5. Upload the .aab file, fill in your app description and screenshots, and submit. Google reviews in 1 to 7 days!</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -505,196 +589,6 @@
 </div>
 
 
-<!-- ════════════════════════════════
-     TUTORIAL SCREEN
-════════════════════════════════ -->
-<div class="screen hidden full-screen-panel" id="tutorial-screen">
-  <div class="topbar">
-    <button class="back-btn" onclick="showScreen('grid-screen')">‹</button>
-    <div class="topbar-title">? How to Use</div>
-  </div>
-  <!-- tabs -->
-  <div class="nav-tabs" style="flex-shrink:0;padding:0 4%;">
-    <div class="nav-tab active" onclick="tTab(0)">Getting Started</div>
-    <div class="nav-tab" onclick="tTab(1)">Voice AI</div>
-    <div class="nav-tab" onclick="tTab(2)">Tiles</div>
-    <div class="nav-tab" onclick="tTab(3)">Publish</div>
-  </div>
-  <div class="panel-scroll">
-  <div class="panel-inner">
-
-    <!-- Tutorial 0 -->
-    <div class="t-tab-panel" id="ttab-0">
-      <div class="tut-card">
-        <div style="font-size:15px;font-weight:500;color:#1db8e8;margin-bottom:12px;">Welcome to BlackBerry Assistant Pro!</div>
-        <div class="tut-step">
-          <div class="tut-num">1</div>
-          <div class="tut-text">
-            <div class="tut-title">Sign Up for Free</div>
-            <div class="tut-desc">Create your free account with your name, email, and city. Your data is saved on your device.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">2</div>
-          <div class="tut-text">
-            <div class="tut-title">Tap the Tiles</div>
-            <div class="tut-desc">Each coloured tile opens a different feature. Alarm, Find Location, Search, Sports, and Tickets.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">3</div>
-          <div class="tut-text">
-            <div class="tut-title">Type in the Search Bar</div>
-            <div class="tut-desc">Type any question and press Enter. The AI will answer it right inside the app.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">4</div>
-          <div class="tut-text">
-            <div class="tut-title">Tap the Mic Button</div>
-            <div class="tut-desc">Tap the circle mic button to speak. Your assistant will listen and respond by voice.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">5</div>
-          <div class="tut-text">
-            <div class="tut-title">Customise in Settings</div>
-            <div class="tut-desc">Tap ⚙ in the top right to change tile colours, voice type, your city, and more.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tutorial 1: Voice -->
-    <div class="t-tab-panel hidden" id="ttab-1">
-      <div class="tut-card">
-        <div style="font-size:15px;font-weight:500;color:#1db8e8;margin-bottom:12px;">Talking to Your Assistant</div>
-        <div class="tut-step">
-          <div class="tut-num">1</div>
-          <div class="tut-text">
-            <div class="tut-title">Tap the Mic</div>
-            <div class="tut-desc">Tap the white circle mic button at the bottom. The blue orb screen will appear.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">2</div>
-          <div class="tut-text">
-            <div class="tut-title">Tap the Blue Orb to Speak</div>
-            <div class="tut-desc">Tap the blue circle to start listening, then speak clearly. It shows what you said.</div>
-            <div class="tut-say">Try saying: "What's the weather today?"</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">3</div>
-          <div class="tut-text">
-            <div class="tut-title">Have a Conversation</div>
-            <div class="tut-desc">You can keep talking back and forth. The AI remembers what you said in the same session.</div>
-            <div class="tut-say">Try: "Tell me a joke"</div>
-            <div class="tut-say" style="margin-top:4px;">Try: "What sports games are on today?"</div>
-            <div class="tut-say" style="margin-top:4px;">Try: "Find me a restaurant"</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">4</div>
-          <div class="tut-text">
-            <div class="tut-title">Change the Voice</div>
-            <div class="tut-desc">Go to ⚙ Settings → Voice tab to switch between Female, Male, Girl, or Boy voice.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tutorial 2: Tiles -->
-    <div class="t-tab-panel hidden" id="ttab-2">
-      <div class="tut-card">
-        <div style="font-size:15px;font-weight:500;color:#1db8e8;margin-bottom:12px;">Using the Tiles</div>
-        <div class="tut-step">
-          <div class="tut-num">⏰</div>
-          <div class="tut-text">
-            <div class="tut-title">Alarm Tile (Green)</div>
-            <div class="tut-desc">Shows the current time and date. Tap to set reminders using your voice.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">📍</div>
-          <div class="tut-text">
-            <div class="tut-title">Find My Current (Green)</div>
-            <div class="tut-desc">Shows restaurants and places near your city. Set your city in ⚙ Settings → Location.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">🔍</div>
-          <div class="tut-text">
-            <div class="tut-title">Search the Internet (Blue)</div>
-            <div class="tut-desc">Ask any question and the AI answers inside the app. No browser needed.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">🏈</div>
-          <div class="tut-text">
-            <div class="tut-title">Sports Tile (Red)</div>
-            <div class="tut-desc">Changes every day — NFL on Sundays/Mondays, NBA on Tuesdays/Fridays, MLB on Wednesdays, College Football on Saturdays.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">🎟</div>
-          <div class="tut-text">
-            <div class="tut-title">Tickets Tile (Dark Red)</div>
-            <div class="tut-desc">Shows upcoming events and concerts near your city.</div>
-          </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-num">✏</div>
-          <div class="tut-text">
-            <div class="tut-title">Customise Tiles</div>
-            <div class="tut-desc">Go to ⚙ Settings → Tiles to change the colour and label of every tile.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tutorial 3: Publish -->
-    <div class="t-tab-panel hidden" id="ttab-3">
-      <div class="tut-card">
-        <div style="font-size:15px;font-weight:500;color:#1db8e8;margin-bottom:14px;">How to Publish to Google Play</div>
-
-        <div class="publish-step">
-          <div class="publish-title"><span class="publish-num">1</span> Upload to GitHub Pages</div>
-          <div class="publish-desc">Make sure all 5 files are in your GitHub repo:<br>index.html, manifest.json, sw.js, icon-192.png, icon-512.png</div>
-          <div class="code-box">alexwilkerson28-hue.github.io/blackberry-assistant</div>
-        </div>
-
-        <div class="publish-step">
-          <div class="publish-title"><span class="publish-num">2</span> Go to PWABuilder</div>
-          <div class="publish-desc">Visit pwabuilder.com, paste your GitHub Pages URL, click Start, then "Package for Stores" → Android.</div>
-          <div class="code-box">pwabuilder.com</div>
-        </div>
-
-        <div class="publish-step">
-          <div class="publish-title"><span class="publish-num">3</span> Pay Google's $25 Fee</div>
-          <div class="publish-desc">Go to play.google.com/console and pay the one-time $25 developer registration fee.</div>
-        </div>
-
-        <div class="publish-step">
-          <div class="publish-title"><span class="publish-num">4</span> Create Your App</div>
-          <div class="publish-desc">In Google Play Console: Create app → upload the .aab file from PWABuilder → fill in description, screenshots, category (Productivity).</div>
-        </div>
-
-        <div class="publish-step">
-          <div class="publish-title"><span class="publish-num">5</span> Submit for Review</div>
-          <div class="publish-desc">Complete the content rating questions → Submit → Google reviews in 1–7 days → Your app goes live on the Play Store!</div>
-        </div>
-
-        <div class="publish-step">
-          <div class="publish-title"><span class="publish-num">💡</span> Company Tip</div>
-          <div class="publish-desc">To make this a real company:<br>• Register a business name<br>• Get a domain name (e.g. bbassistantpro.com)<br>• Use the domain email for Google Play<br>• Add a privacy policy page (required by Google)</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-  </div>
-</div>
 
 
 <script>
@@ -716,14 +610,13 @@ function seedAccounts(){
       createdAt:'2024-01-01'
     };
   }
-  if(!users['alexwilkerson28@gmail.com']){
-    users['alexwilkerson28@gmail.com'] = {
-      firstName:'Alex', lastName:'Wilkerson',
-      email:'alexwilkerson28@gmail.com', password:'cadilac11',
-      city:'Hapeville', country:'USA', team:'',
-      createdAt:'2024-01-01'
-    };
-  }
+  // Always ensure alexwilkerson28 has cadilac11 (reset if wrong)
+  users['alexwilkerson28@gmail.com'] = {
+    firstName:'Alex', lastName:'Wilkerson',
+    email:'alexwilkerson28@gmail.com', password:'cadilac11',
+    city:'Hapeville', country:'USA', team:'',
+    createdAt:'2024-01-01'
+  };
   localStorage.setItem('bb_users', JSON.stringify(users));
 }
 seedAccounts();
@@ -947,13 +840,10 @@ function showPanel(id){showScreen(id);if(id==='settings-screen')populateSettings
    SETTINGS TABS
 ══════════════════════════════ */
 function sTab(i){
-  document.querySelectorAll('#settings-screen .nav-tab').forEach((t,j)=>t.classList.toggle('active',j===i));
-  document.querySelectorAll('.s-tab-panel').forEach((p,j)=>p.classList.toggle('hidden',j!==i));
+  document.querySelectorAll('#settings-screen .nav-tab').forEach(function(t,j){t.classList.toggle('active',j===i);});
+  document.querySelectorAll('.s-tab-panel').forEach(function(p,j){p.classList.toggle('hidden',j!==i);});
 }
-function tTab(i){
-  document.querySelectorAll('#tutorial-screen .nav-tab').forEach((t,j)=>t.classList.toggle('active',j===i));
-  document.querySelectorAll('.t-tab-panel').forEach((p,j)=>p.classList.toggle('hidden',j!==i));
-}
+// tutorial merged into settings
 
 /* ══════════════════════════════
    GPS
