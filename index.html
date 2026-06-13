@@ -44,7 +44,7 @@
 
     /* ═══ GRID SCREEN ═══ */
     #grid-screen{background:radial-gradient(ellipse at 50% 30%,#0d0d14 0%,#000 75%);}
-    .greeting-bar{width:438px;padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .greeting-bar{width:518px;padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
     .greeting-left{display:flex;align-items:center;gap:8px;}
     .bb-logo-sm svg{width:26px;height:26px;}
     .greeting-text{font-size:clamp(12px,3vw,15px);font-weight:300;color:rgba(255,255,255,.8);}
@@ -55,19 +55,19 @@
     .gear-btn:hover{transform:rotate(45deg);}
 
     /* tiles */
-    .tile-grid{display:grid;grid-template-columns:220px 108px 108px;grid-template-rows:122px 122px;gap:2px;width:438px;}
+    .tile-grid{display:grid;grid-template-columns:260px 128px 128px;grid-template-rows:145px 145px;gap:2px;width:518px;}
     .tile{display:flex;flex-direction:column;justify-content:flex-end;padding:10px 12px;cursor:pointer;color:#fff;position:relative;overflow:hidden;transition:filter .12s,transform .1s;-webkit-tap-highlight-color:transparent;}
     .tile:active{transform:scale(.97);filter:brightness(1.3);}
     .tile-icon-area{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);}
-    .tile-icon-area svg{width:32px;height:32px;}
-    .tile-label{font-size:12px;font-weight:400;line-height:1.25;z-index:1;}
-    .t-alarm{grid-row:span 2;}.t-alarm .tile-icon-area{top:40%;}.t-alarm .tile-label{font-size:13px;}
+    .tile-icon-area svg{width:38px;height:38px;}
+    .tile-label{font-size:13px;font-weight:400;line-height:1.25;z-index:1;}
+    .t-alarm{grid-row:span 2;}.t-alarm .tile-icon-area{top:40%;}.t-alarm .tile-label{font-size:14px;}
     .sport-day{font-size:8px;opacity:.6;text-transform:uppercase;letter-spacing:.3px;}
-    .sport-name{font-size:12px;font-weight:600;line-height:1.2;}
+    .sport-name{font-size:13px;font-weight:600;line-height:1.2;}
     .sport-league{font-size:8px;opacity:.65;}
 
     /* search */
-    .search-row{width:438px;background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.15);padding:10px 14px;display:flex;align-items:center;gap:8px;position:relative;flex-shrink:0;}
+    .search-row{width:518px;background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.15);padding:10px 14px;display:flex;align-items:center;gap:8px;position:relative;flex-shrink:0;}
     .search-ph{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:clamp(14px,3.5vw,17px);font-style:italic;font-weight:300;color:rgba(255,255,255,.32);white-space:nowrap;pointer-events:none;}
     .search-row input{flex:1;background:transparent;border:none;outline:none;font-family:inherit;font-size:clamp(14px,3.5vw,17px);font-style:italic;font-weight:300;color:rgba(255,255,255,.85);caret-color:#1db8e8;-webkit-user-select:text;user-select:text;}
     .search-row input:focus{font-style:normal;}
