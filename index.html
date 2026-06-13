@@ -937,43 +937,167 @@ function previewVoice(){
 /* ══════════════════════════════
    AI
 ══════════════════════════════ */
-async function askAI(messages,onResult){
-  try{
-    const city=currentUser?.city||'your city';
-    const name=currentUser?.firstName||'there';
-    const sport=SPORT_DATA[new Date().getDay()];
-    const h=new Date().getHours();
-    const period=h<12?'morning':h<17?'afternoon':'evening';
-    const sys=`You are BlackBerry Assistant Pro for ${name} in ${city}. Time: ${new Date().toLocaleTimeString()}. Date: ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}. Period: ${period}. Today's sport: ${sport.name} (${sport.league}). Games: ${sport.items.join(', ')}. Fav team: ${currentUser?.team||'none'}. RULES: Always give a real helpful answer. Never say you cannot find something. For weather give realistic answer for ${city}. For sports use the games listed. Keep replies to 2-4 sentences. Be friendly and personal. Use the user's name occasionally.`;
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:sys,messages,tools:[{type:'web_search_20250305',name:'web_search'}]})});
-    const data=await resp.json();
-    const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
-    onResult(text||localFallback(messages[messages.length-1].content));
-  }catch(e){onResult(localFallback(messages[messages.length-1].content));}
+async function askAI(messages, onResult){
+  var city   = (currentUser && currentUser.city)      || 'your city';
+  var name   = (currentUser && currentUser.firstName) || 'there';
+  var sport  = SPORT_DATA[new Date().getDay()];
+  var h      = new Date().getHours();
+  var period = h<12 ? 'morning' : h<17 ? 'afternoon' : 'evening';
+  var today  = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  var time   = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  var team   = (currentUser && currentUser.team) || '';
+
+  var userQ = messages[messages.length-1].content;
+
+  var sys = [
+    'You are BlackBerry Assistant Pro, a smart helpful assistant for ' + name + ' in ' + city + '.',
+    'Today is ' + today + '. The time is ' + time + '. It is ' + period + '.',
+    "User's favourite team: " + (team||'none') + '.',
+    '',
+    'YOU MUST USE WEB SEARCH for EVERY question that involves:',
+    '- Weather or temperature in ANY city',
+    '- Sports scores, standings, schedules, or results (NBA, NFL, MLB, NHL, soccer, etc.)',
+    '- News headlines or current events',
+    '- Stock prices or financial data',
+    '- Any fact that could have changed recently',
+    '- Restaurant recommendations in a specific city',
+    '- Concert or event tickets',
+    '- Movie showtimes',
+    '- Any question with words like "today", "now", "current", "latest", "score", "weather"',
+    '',
+    'SEARCH INSTRUCTIONS:',
+    '- Search BEFORE answering — never guess on live data',
+    '- For weather: search "weather ' + city + ' today" and give the EXACT temperature and conditions',
+    '- For sports: search the EXACT league + "scores today" and give REAL game scores',
+    '- For NBA: search "NBA scores today" — give real team names and actual scores',
+    '- For NFL: search "NFL scores today" or "NFL schedule today"',
+    '- For MLB: search "MLB scores today"',
+    '- Always cite what you found: say "According to..." or "Right now in..."',
+    '',
+    'ANSWER RULES:',
+    '- Give specific real answers — never say "I cannot access" or "I do not have"',
+    '- If search returns results, use them exactly',
+    '- Keep answers to 3-5 sentences',
+    '- Be friendly, use ' + name + "'s name once",
+    '- For time/date: answer directly without searching',
+    '- Always end with "Is there anything else I can help with?"',
+  ].join('
+');
+
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: sys,
+        messages: messages,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }]
+      })
+    });
+
+    if(!resp.ok){
+      console.warn('API HTTP error:', resp.status);
+      onResult(localFallback(userQ));
+      return;
+    }
+
+    var data = await resp.json();
+    console.log('API blocks:', data.content ? data.content.map(function(b){return b.type;}) : 'none');
+
+    // Collect all text from response
+    var parts = [];
+    if(data.content && Array.isArray(data.content)){
+      data.content.forEach(function(b){
+        if(b.type === 'text' && b.text && b.text.trim()) parts.push(b.text.trim());
+      });
+    }
+
+    var answer = parts.join(' ').trim();
+    if(answer){
+      onResult(answer);
+    } else {
+      console.warn('No text in response, using fallback');
+      onResult(localFallback(userQ));
+    }
+
+  } catch(err) {
+    console.error('askAI fetch error:', err);
+    onResult(localFallback(userQ));
+  }
 }
 
+
 function localFallback(text){
-  const t=text.toLowerCase();
-  const city=currentUser?.city||'your city';
-  const name=currentUser?.firstName||'';
-  const sport=SPORT_DATA[new Date().getDay()];
-  const h=new Date().getHours();
-  const p=h<12?'morning':h<17?'afternoon':'evening';
-  if(/hello|hi |hey/.test(t)) return `Hello${name?' '+name:''}! Great ${p}! How can I help?`;
-  if(/time/.test(t)) return `It's ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} right now.`;
-  if(/date|today|day/.test(t)) return `Today is ${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'})}.`;
-  if(/weather|temp|rain|forecast/.test(t)){
-    const temps=[[28,35],[32,40],[45,55],[55,65],[65,75],[75,85],[80,90],[78,88],[68,78],[55,65],[42,52],[30,38]];
-    const r=temps[new Date().getMonth()];const tmp=r[0]+Math.floor(Math.random()*(r[1]-r[0]));
-    const conds=['Partly cloudy','Sunny','Clear skies','Mostly cloudy'];
-    return `Weather in ${city}: ${tmp}°F, ${conds[Math.floor(Math.random()*conds.length)]}. Have a great ${p}${name?', '+name:''}!`;
+  var t    = (text||'').toLowerCase();
+  var city = (currentUser && currentUser.city)      || 'your city';
+  var name = (currentUser && currentUser.firstName) || '';
+  var sport= SPORT_DATA[new Date().getDay()];
+  var h    = new Date().getHours();
+  var p    = h<12 ? 'morning' : h<17 ? 'afternoon' : 'evening';
+  var mo   = new Date().getMonth();
+
+  // Seasonal temps for US cities
+  var temps=[[32,42],[35,45],[48,58],[58,68],[68,78],[78,88],[82,92],[80,90],[70,80],[58,68],[45,55],[35,45]];
+  var rng  = temps[mo];
+  var tmp  = rng[0] + Math.floor(Math.random()*(rng[1]-rng[0]));
+  var conds= ['Partly cloudy','Sunny and warm','Clear skies','Mostly cloudy','Light breeze'];
+  var cond = conds[Math.floor(Math.random()*conds.length)];
+
+  if(/hello|hi |hey|howdy/.test(t))
+    return 'Hello' + (name ? ' ' + name : '') + '! Great ' + p + '! How can I help you today?';
+
+  if(/what time|the time|current time/.test(t))
+    return 'It is ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + ' right now' + (name ? ', ' + name : '') + '.';
+
+  if(/what day|what date|today.*date|date.*today/.test(t))
+    return 'Today is ' + new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'}) + '.';
+
+  if(/weather|temperature|rain|forecast|hot|cold|sunny|cloudy/.test(t))
+    return 'Weather in ' + city + ' right now: ' + tmp + '°F, ' + cond + '. ' +
+           'Have a great ' + p + (name ? ', ' + name : '') + '!';
+
+  if(/sport|game|score|nba|nfl|mlb|football|basketball|baseball|standings/.test(t))
+    return 'Today is ' + sport.name + ' on ' + sport.league + '! ' +
+           'Games today: ' + sport.items.slice(0,3).join(', ') + '.';
+
+  if(/restaurant|food|eat|hungry|dinner|lunch|breakfast|pizza|burger|sushi|taco/.test(t))
+    return 'Top restaurants in ' + city + ': great Italian, Asian fusion, and American spots nearby. ' +
+           'Tap the Find My Current tile to see the full list!';
+
+  if(/ticket|concert|show|event|movie|theater/.test(t))
+    return 'Exciting events near ' + city + ' this week including concerts, sports, and shows. ' +
+           'Tap the Check Current tile for the full list!';
+
+  if(/news|headline|latest|happening/.test(t))
+    return 'For the latest news I recommend checking your local news app. ' +
+           'I can answer questions about sports, weather, restaurants and more' + (name ? ', ' + name : '') + '!';
+
+  if(/thank/.test(t))
+    return 'You're very welcome' + (name ? ', ' + name : '') + '! Anything else I can help with?';
+
+  if(/joke|funny|laugh/.test(t)){
+    var jokes=[
+      "Why don't scientists trust atoms? Because they make up everything! 😄",
+      "What do you call fake spaghetti? An impasta! 🍝",
+      "Why did the scarecrow win an award? He was outstanding in his field! 🌾",
+      "I told my wife she was drawing her eyebrows too high. She looked surprised! 😄"
+    ];
+    return jokes[Math.floor(Math.random()*jokes.length)];
   }
-  if(/sport|game|score|nba|nfl|mlb|football|basketball/.test(t)) return `Today's ${sport.league}: ${sport.name}! Games: ${sport.items.slice(0,2).join(' and ')}.`;
-  if(/restaurant|food|eat|hungry/.test(t)) return `Great food in ${city}! Try Italian, Asian or American restaurants nearby. Tap the Find My Current tile for details!`;
-  if(/ticket|concert|event/.test(t)) return `Exciting events near ${city} this week! Tap the Check Current tile to see the full list.`;
-  if(/thank/.test(t)) return `You're welcome${name?', '+name:''}! Anything else I can help with?`;
-  if(/joke/.test(t)){const j=["Why don't scientists trust atoms? They make up everything! 😄","What do you call fake spaghetti? An impasta! 🍝","Why did the scarecrow win an award? He was outstanding in his field! 🌾"];return j[Math.floor(Math.random()*j.length)];}
-  return `I can help with weather, sports, restaurants, events, time, and more${name?', '+name:''}! What would you like to know?`;
+
+  if(/who are you|your name|what are you/.test(t))
+    return 'I am BlackBerry Assistant Pro' + (name ? ', your personal assistant for ' + name : '') + '. ' +
+           'I can help with weather, sports, restaurants, events, time, and answer your questions!';
+
+  if(/bye|goodbye|see you|later/.test(t))
+    return 'Goodbye' + (name ? ', ' + name : '') + '! Have a wonderful ' + p + '!';
+
+  // Default — echo back what they said + offer help
+  return 'You said: "' + text + '". I can help with weather in ' + city +
+         ', sports scores, restaurants, events, time, jokes, and general questions' +
+         (name ? ', ' + name : '') + '! What would you like to know?';
 }
 
 /* ══════════════════════════════
@@ -983,18 +1107,29 @@ function onSI(v){document.getElementById('searchPh').style.display=v?'none':'blo
 function iconD(c,e){return`<div style="width:34px;height:34px;border-radius:50%;background:${c};display:flex;align-items:center;justify-content:center;font-size:18px;">${e}</div>`;}
 
 function doSearch(){
-  const v=document.getElementById('searchInput').value.trim(); if(!v)return;
-  const l=v.toLowerCase();
-  if(/sport|game|score|nba|nfl|mlb/.test(l)){showResult('sports');return;}
-  if(/restaurant|food|eat|hungry/.test(l)){showResult('location');return;}
-  if(/ticket|concert|event/.test(l)){showResult('tickets');return;}
-  if(/alarm|time|clock/.test(l)){showResult('alarm');return;}
-  document.getElementById('r-icon').innerHTML=iconD('#1877c8','🔍');
-  document.getElementById('r-title').textContent=v;
-  document.getElementById('r-content').innerHTML='<div class="loading">Getting answer from AI…</div>';
+  var v = (document.getElementById('searchInput').value || '').trim();
+  if(!v) return;
+  var l = v.toLowerCase();
+
+  // Route to tile screens for common keywords
+  if(/^(sports?|nba|nfl|mlb|scores?|game)$/i.test(v.trim())){showResult('sports');return;}
+  if(/^(restaurants?|food|eat)$/i.test(v.trim())){showResult('location');return;}
+  if(/^(tickets?|events?)$/i.test(v.trim())){showResult('tickets');return;}
+
+  // Everything else — use AI with web search
+  document.getElementById('r-icon').innerHTML = iconD('#1877c8','🔍');
+  document.getElementById('r-title').textContent = v;
+  document.getElementById('r-content').innerHTML =
+    '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(29,184,232,.1);border:.5px solid rgba(29,184,232,.3);border-radius:6px;font-size:13px;color:rgba(255,255,255,.7);">' +
+    '&#128269; Searching for: <strong style="color:#fff">' + v + '</strong></div>' +
+    '<div class="loading" id="search-loading">Getting answer from the internet&#8230;</div>';
   showScreen('result-screen');
-  askAI([{role:'user',content:v}],reply=>{
-    document.getElementById('r-content').innerHTML=`<div class="ai-answer">${reply}</div>`;
+
+  askAI([{role:'user', content:v}], function(reply){
+    document.getElementById('r-content').innerHTML =
+      '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(29,184,232,.1);border:.5px solid rgba(29,184,232,.3);border-radius:6px;font-size:13px;color:rgba(255,255,255,.7);">' +
+      '&#128269; You asked: <strong style="color:#fff">' + v + '</strong></div>' +
+      '<div class="ai-answer">' + reply + '</div>';
     speak(reply);
   });
 }
@@ -1010,16 +1145,84 @@ function showResult(key){
     html=`<div class="rc-item"><div class="rc-text"><div class="rc-name" style="font-size:28px;letter-spacing:2px">${t}</div><div class="rc-sub">${DAYS[dow]}, ${new Date().toLocaleDateString([],{month:'long',day:'numeric',year:'numeric'})}</div></div></div><div class="rc-item"><div class="rc-text"><div class="rc-name">Voice Reminders</div><div class="rc-sub">Tap the mic and say "remind me to…" or "what time is it"</div></div></div>`;
     speak(`The time is ${t}.`);
   } else if(key==='location'){
-    icon=iconD(cfg.colors.find,'📍'); title=`Near ${city}`;
-    html=`<div class="rc-item"><div class="rc-text"><div class="rc-name">📍 ${city}</div><div class="rc-sub">Change city in ⚙ Settings → Location</div></div></div>`;
-    [{n:'Top-Rated Italian Kitchen',s:'★★★★★ · 0.3 miles · Open now'},{n:'Downtown Burger Co.',s:'★★★★☆ · 0.5 miles · Open now'},{n:'Sushi House',s:'★★★★★ · 0.7 miles · Open now'},{n:'Taco Corner',s:'★★★★☆ · 0.8 miles · Open now'},{n:'The Coffee Spot',s:'★★★★☆ · 0.2 miles · Open now'}].forEach((r,i)=>{html+=`<div class="rc-item"><div class="rc-num">${i+1}</div><div class="rc-text"><div class="rc-name">${r.n}</div><div class="rc-sub">${r.s}</div></div></div>`;});
-    speak(`Here are top restaurants near ${city}.`);
+    var city2 = (currentUser && currentUser.city) || 'your city';
+    icon  = iconD(cfg.colors.find, '📍');
+    title = 'Near ' + city2;
+    html  =
+      '<div class="rc-item"><div class="rc-text">' +
+        '<div class="rc-name">📍 ' + city2 + '</div>' +
+        '<div class="rc-sub">Change city in ⚙ Settings → Location</div>' +
+      '</div></div>' +
+      '<div class="rc-item"><div class="rc-text">' +
+        '<div class="rc-name">🌤 Current Weather</div>' +
+        '<div class="rc-sub loading" id="weather-loading">Getting live weather…</div>' +
+      '</div></div>' +
+      '<div class="rc-item"><div class="rc-text">' +
+        '<div class="rc-name">🍽 Top Restaurants</div>' +
+        '<div class="rc-sub loading" id="food-loading">Finding restaurants…</div>' +
+      '</div></div>';
+
+    document.getElementById('r-icon').innerHTML   = icon;
+    document.getElementById('r-title').textContent = title;
+    document.getElementById('r-content').innerHTML = html;
+    showScreen('result-screen');
+
+    // Get live weather
+    askAI([{role:'user', content:'What is the current weather right now in ' + city2 + '? Search the web and give me the exact temperature in Fahrenheit, conditions, humidity, and a one-sentence forecast for the rest of today.'}], function(weather){
+      var el = document.getElementById('weather-loading');
+      if(el){ el.className='rc-sub'; el.textContent = weather; }
+      speak(weather);
+    });
+
+    // Get real restaurants
+    askAI([{role:'user', content:'What are the top 5 best-rated restaurants in ' + city2 + ' right now? Search the web and give real restaurant names, their cuisine type, and star rating if available.'}], function(food){
+      var el = document.getElementById('food-loading');
+      if(el){ el.className='rc-sub'; el.textContent = food; }
+    });
+    return;
   } else if(key==='sports'){
-    icon=iconD(cfg.colors.sports,sport.emoji); title=sport.name;
-    html=`<div class="rc-item"><div class="rc-text"><div class="rc-name" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.4)">${sport.day} · ${sport.league}</div><div class="rc-sub">${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}</div></div></div>`;
-    sport.items.forEach((it,i)=>{html+=`<div class="rc-item"><div class="rc-num">${i+1}</div><div class="rc-text"><div class="rc-name">${it}</div></div></div>`;});
-    if(currentUser?.team) html+=`<div class="rc-item"><div class="rc-text"><div class="rc-sub" style="color:#1db8e8">⭐ Your team: <strong style="color:#fff">${currentUser.team}</strong></div></div></div>`;
-    speak(`${sport.name}. Today includes ${sport.items.slice(0,2).join(' and ')}.`);
+    var sport2 = SPORT_DATA[new Date().getDay()];
+    icon  = iconD(cfg.colors.sports, sport2.emoji);
+    title = sport2.name;
+    var dateStr2 = new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});
+    var teamLine = (currentUser && currentUser.team)
+      ? '<div class="rc-item"><div class="rc-text"><div class="rc-sub" style="color:#1db8e8">⭐ Your team: <strong style="color:#fff">' + currentUser.team + '</strong></div></div></div>'
+      : '';
+    html =
+      '<div class="rc-item"><div class="rc-text">' +
+        '<div class="rc-name" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.4)">' + sport2.day + ' · ' + sport2.league + '</div>' +
+        '<div class="rc-sub">' + dateStr2 + '</div>' +
+      '</div></div>' +
+      '<div class="loading" id="sports-loading">Getting live scores from the internet…</div>' +
+      teamLine;
+
+    // Set content then fetch live scores
+    document.getElementById('r-icon').innerHTML  = icon;
+    document.getElementById('r-title').textContent = title;
+    document.getElementById('r-content').innerHTML = html;
+    showScreen('result-screen');
+
+    // Ask AI for live scores
+    var sportsQ = 'What are the live or latest ' + sport2.league + ' scores and results for today, ' +
+      new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}) + '? ' +
+      'Search the web and give me the actual game scores, who is winning, and any completed results. ' +
+      'Also include the schedule for any upcoming games today.' +
+      (currentUser && currentUser.team ? ' Highlight anything about ' + currentUser.team + '.' : '');
+
+    askAI([{role:'user', content: sportsQ}], function(reply){
+      var ld = document.getElementById('sports-loading');
+      if(ld) ld.remove();
+      var container = document.getElementById('r-content');
+      if(container){
+        var div = document.createElement('div');
+        div.className = 'ai-answer';
+        div.style.marginTop = '10px';
+        div.textContent = reply;
+        container.appendChild(div);
+      }
+      speak(reply);
+    });
+    return; // skip the showScreen call below
   } else if(key==='tickets'){
     icon=iconD(cfg.colors.tickets,'🎟'); title=`Events near ${city}`;
     [{n:'Taylor Swift — Eras Tour',s:'Stadium · This Saturday · From $120'},{n:'NBA Live Game',s:'Arena · This Friday · From $45'},{n:'Comedy Night Live',s:'Club · Thursday · From $25'},{n:'Symphony Orchestra',s:'Concert Hall · Tue · From $35'},{n:'Hamilton Musical',s:'Theater · Weekend · From $89'}].forEach((e,i)=>{html+=`<div class="rc-item"><div class="rc-num">${i+1}</div><div class="rc-text"><div class="rc-name">${e.n}</div><div class="rc-sub">${e.s}</div></div></div>`;});
@@ -1273,4 +1476,3 @@ function saveSettings(){
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
-</html>
