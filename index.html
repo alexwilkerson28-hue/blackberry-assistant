@@ -786,7 +786,7 @@ function doResetPassword(){
 ══════════════════════════════ */
 let cfg={
   speakResults:true,aiMode:true,animateWave:true,remember:true,
-  voiceType:'female',speed:0.97,pitch:1.1,lang:'en-US',
+  voiceType:'female',speed:1.15,pitch:1.0,lang:'en-US',
   colors:{alarm:'#7a9a2a',find:'#5a8a2a',search:'#1877c8',sports:'#c03030',tickets:'#b02828'},
   labels:{alarm:'Set an alarm',find:'Find my current',search:'Search the Internet',tickets:'Check current'},
   likes:0,liked:false
@@ -879,59 +879,166 @@ function toggleLike(){
 /* ══════════════════════════════
    VOICE SELECTION
 ══════════════════════════════ */
-let femaleVoice=null,maleVoice=null,girlVoice=null,boyVoice=null,chosenVoice=null;
+var allVoices = [];
+var chosenVoice = null;
+
+// Priority list — best neural/natural voices first (Copilot-style)
+var VOICE_PREFS = {
+  female: [
+    'Microsoft Aria',        // Best — Azure neural, Copilot default
+    'Microsoft Jenny',       // Azure neural US female
+    'Microsoft Zira',        // Windows built-in female
+    'Google US English',     // Google neural female
+    'Samantha',              // macOS/iOS natural female
+    'Karen',                 // Australian female
+    'Victoria',              // macOS female
+    'Moira',                 // Irish English female
+    'Tessa',                 // South African female
+    'Fiona',                 // Scottish female
+  ],
+  male: [
+    'Microsoft Guy',         // Azure neural US male
+    'Microsoft Davis',       // Azure neural male
+    'Microsoft Andrew',      // Azure neural male
+    'Alex',                  // macOS natural male
+    'Daniel',                // British male
+    'Google UK English Male',
+    'David',                 // Windows male
+    'Mark',
+    'James',
+  ],
+  girl: [
+    'Microsoft Aria',
+    'Google US English',
+    'Samantha',
+    'Karen',
+  ],
+  boy: [
+    'Microsoft Guy',
+    'Alex',
+    'Daniel',
+  ]
+};
 
 function loadVoices(){
-  const vv=window.speechSynthesis.getVoices();
-  // Female
-  const fp=['samantha','zira','victoria','karen','moira','tessa','fiona'];
-  for(const p of fp){const v=vv.find(x=>x.name.toLowerCase().includes(p));if(v){femaleVoice=v;break;}}
-  if(!femaleVoice) femaleVoice=vv.find(v=>!/(male|david|james|mark|alex|daniel|tom)/i.test(v.name))||vv[0];
-  // Male
-  const mp=['david','alex','daniel','mark','james','tom','google uk english male'];
-  for(const p of mp){const v=vv.find(x=>x.name.toLowerCase().includes(p));if(v){maleVoice=v;break;}}
-  if(!maleVoice) maleVoice=vv.find(v=>/(male|david|james|mark|alex|daniel)/i.test(v.name))||vv[1]||vv[0];
-  // Girl — high pitch female
-  girlVoice=femaleVoice;
-  // Boy — high pitch male
-  boyVoice=maleVoice;
-  updateChosenVoice();
+  allVoices = window.speechSynthesis.getVoices();
+  if(!allVoices || allVoices.length === 0) return;
+  pickVoice();
 }
-window.speechSynthesis.onvoiceschanged=loadVoices; loadVoices();
 
-function updateChosenVoice(){
-  const t=cfg.voiceType||'female';
-  if(t==='male') chosenVoice=maleVoice;
-  else if(t==='girl') chosenVoice=femaleVoice;
-  else if(t==='boy') chosenVoice=maleVoice;
-  else chosenVoice=femaleVoice;
+function pickVoice(){
+  var type = cfg.voiceType || 'female';
+  var prefs = VOICE_PREFS[type] || VOICE_PREFS.female;
+  chosenVoice = null;
+
+  // Try each preferred voice name
+  for(var i=0; i<prefs.length; i++){
+    var pref = prefs[i].toLowerCase();
+    var found = null;
+    // Exact name match first
+    for(var j=0; j<allVoices.length; j++){
+      if(allVoices[j].name.toLowerCase() === pref){
+        found = allVoices[j]; break;
+      }
+    }
+    // Partial match
+    if(!found){
+      for(var j=0; j<allVoices.length; j++){
+        if(allVoices[j].name.toLowerCase().indexOf(pref) !== -1){
+          found = allVoices[j]; break;
+        }
+      }
+    }
+    if(found){ chosenVoice = found; break; }
+  }
+
+  // Ultimate fallback
+  if(!chosenVoice){
+    if(type === 'male' || type === 'boy'){
+      // Find any male-sounding voice
+      chosenVoice = allVoices.find(function(v){
+        return /(male|man|guy|david|james|mark|alex|daniel|tom)/i.test(v.name);
+      }) || allVoices[0];
+    } else {
+      // Find any female-sounding voice (not male)
+      chosenVoice = allVoices.find(function(v){
+        return !/(male|david|james|mark|alex|daniel|tom|guy)/i.test(v.name);
+      }) || allVoices[0];
+    }
+  }
+
+  console.log('Voice chosen:', chosenVoice ? chosenVoice.name : 'none', '| type:', type);
+}
+
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function getRate(){
+  // Fast and natural like Copilot — rate 1.15 base
+  var base = 1.15;
+  if(cfg.speed && cfg.speed !== 0.97) base = parseFloat(cfg.speed);
+  return base;
 }
 
 function getPitch(){
-  const t=cfg.voiceType||'female';
-  if(t==='girl') return Math.min(2.0, (cfg.pitch||1.1)*1.4);
-  if(t==='boy')  return Math.min(1.8, (cfg.pitch||1.1)*1.2);
-  if(t==='male') return Math.max(0.6, (cfg.pitch||1.1)*0.75);
-  return cfg.pitch||1.1;
+  var type = cfg.voiceType || 'female';
+  var base = parseFloat(cfg.pitch || 1.0);
+  if(type === 'girl') return Math.min(1.8, base * 1.3);
+  if(type === 'boy')  return Math.min(1.5, base * 1.15);
+  if(type === 'male') return Math.max(0.7, base * 0.85);
+  return base; // female — natural pitch
+}
+
+function cleanText(txt){
+  // Remove markdown, emojis that sound weird, citations
+  return (txt || '')
+    .replace(/<[^>]+>/g, '')           // HTML tags
+    .replace(/\*\*(.*?)\*\*/g, '$1')   // bold **text**
+    .replace(/\*(.*?)\*/g, '$1')       // italic *text*
+    .replace(/#{1,6}\s/g, '')          // headers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g,'$1') // links
+    .replace(/According to [^,]+,\s*/gi, '') // "According to X,"
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function speak(txt){
-  if(!cfg.speakResults||!txt) return;
+  if(!cfg.speakResults || !txt) return;
   window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(txt.replace(/<[^>]+>/g,''));
-  u.voice=chosenVoice||femaleVoice; u.rate=cfg.speed||0.97; u.pitch=getPitch(); u.lang=cfg.lang||'en-US';
-  window.speechSynthesis.speak(u);
+
+  var cleaned = cleanText(txt);
+  if(!cleaned) return;
+
+  // Break into sentences for faster start (browsers delay on long text)
+  var sentences = cleaned.match(/[^.!?]+[.!?]+/g) || [cleaned];
+
+  function speakNext(idx){
+    if(idx >= sentences.length) return;
+    var u = new SpeechSynthesisUtterance(sentences[idx].trim());
+    if(chosenVoice) u.voice = chosenVoice;
+    u.rate  = getRate();
+    u.pitch = getPitch();
+    u.lang  = cfg.lang || 'en-US';
+    u.volume = 1.0;
+    u.onend = function(){ speakNext(idx + 1); };
+    window.speechSynthesis.speak(u);
+  }
+
+  speakNext(0);
 }
 
 function previewVoice(){
-  const sel=document.getElementById('s-voice-type');
-  if(sel) cfg.voiceType=sel.value;
-  cfg.speed=parseFloat(document.getElementById('s-speed')?.value||0.97);
-  cfg.pitch=parseFloat(document.getElementById('s-pitch')?.value||1.1);
-  cfg.lang=document.getElementById('s-lang')?.value||'en-US';
-  updateChosenVoice();
-  const name=currentUser?currentUser.firstName:'there';
-  speak(`Hello ${name}! I am your BlackBerry Assistant. This is how I sound.`);
+  var sel = document.getElementById('s-voice-type');
+  if(sel) cfg.voiceType = sel.value;
+  var spEl = document.getElementById('s-speed');
+  var ptEl = document.getElementById('s-pitch');
+  var lgEl = document.getElementById('s-lang');
+  if(spEl) cfg.speed = parseFloat(spEl.value);
+  if(ptEl) cfg.pitch = parseFloat(ptEl.value);
+  if(lgEl) cfg.lang  = lgEl.value;
+  pickVoice();
+  var name = currentUser ? currentUser.firstName : 'there';
+  speak('Hello ' + name + '! I am your BlackBerry Assistant. How can I help you today?');
 }
 
 /* ══════════════════════════════
@@ -1346,43 +1453,41 @@ function startListening(){
 }
 
 function speakThenListen(txt){
-  // Stop mic completely while speaking
-  if(recog){try{recog.stop();}catch(e){}}
-  recog=null;
+  if(recog){ try{recog.stop();}catch(e){} recog=null; }
+  document.getElementById('micStatus').textContent = 'Speaking…';
 
-  document.getElementById('micStatus').textContent='Speaking…';
-
-  if(!cfg.speakResults||!txt){
-    // No speech — just wait a moment then allow tap
+  if(!cfg.speakResults || !txt){
     setTimeout(function(){
-      if(!document.getElementById('mic-screen').classList.contains('hidden')){
-        document.getElementById('micStatus').textContent='Tap to speak';
-      }
-    },400);
+      if(!document.getElementById('mic-screen').classList.contains('hidden'))
+        document.getElementById('micStatus').textContent = 'Tap to speak';
+    }, 300);
     return;
   }
 
   window.speechSynthesis.cancel();
-  var u=new SpeechSynthesisUtterance(txt.replace(/<[^>]+>/g,''));
-  u.voice=chosenVoice||femaleVoice;
-  u.rate=cfg.speed||0.97;
-  u.pitch=getPitch();
-  u.lang=cfg.lang||'en-US';
+  var cleaned   = cleanText(txt);
+  var sentences = cleaned.match(/[^.!?]+[.!?]+/g) || [cleaned];
+  var total     = sentences.length;
 
-  u.onend=function(){
-    // Speech finished — now safe to listen again
-    if(!document.getElementById('mic-screen').classList.contains('hidden')){
-      document.getElementById('micStatus').textContent='Tap to speak';
+  function speakSeq(idx){
+    if(idx >= total){
+      // All done — allow tap
+      if(!document.getElementById('mic-screen').classList.contains('hidden'))
+        document.getElementById('micStatus').textContent = 'Tap to speak';
+      return;
     }
-  };
+    var u = new SpeechSynthesisUtterance(sentences[idx].trim());
+    if(chosenVoice) u.voice = chosenVoice;
+    u.rate   = getRate();
+    u.pitch  = getPitch();
+    u.lang   = cfg.lang || 'en-US';
+    u.volume = 1.0;
+    u.onend  = function(){ speakSeq(idx + 1); };
+    u.onerror= function(){ speakSeq(idx + 1); };
+    window.speechSynthesis.speak(u);
+  }
 
-  u.onerror=function(){
-    if(!document.getElementById('mic-screen').classList.contains('hidden')){
-      document.getElementById('micStatus').textContent='Tap to speak';
-    }
-  };
-
-  window.speechSynthesis.speak(u);
+  speakSeq(0);
 }
 
 /* ══════════════════════════════
@@ -1476,3 +1581,4 @@ function saveSettings(){
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
+</html>
